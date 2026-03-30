@@ -32,14 +32,19 @@ router.post("/login", async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const menusResult = await pool.query(
-    `SELECT DISTINCT m."MenuId", m."MenuNombre"
-     FROM usuarioperfil up
-     JOIN perfilmenu pm ON up."PerfilId" = pm."PerfilId"
-     JOIN menu m ON pm."MenuId" = m."MenuId"
-     WHERE up."UsuarioId" = $1`,
-    [UsuarioId]
-  );
+  let menusResult;
+  if (usuario.UsuarioIsAdmin === "S") {
+    menusResult = await pool.query('SELECT "MenuId", "MenuNombre" FROM menu');
+  } else {
+    menusResult = await pool.query(
+      `SELECT DISTINCT m."MenuId", m."MenuNombre"
+       FROM usuarioperfil up
+       JOIN perfilmenu pm ON up."PerfilId" = pm."PerfilId"
+       JOIN menu m ON pm."MenuId" = m."MenuId"
+       WHERE up."UsuarioId" = $1`,
+      [UsuarioId]
+    );
+  }
 
   const token = jwt.sign({ userId: UsuarioId }, JWT_SECRET, { expiresIn: "8h" });
 
@@ -62,17 +67,23 @@ router.get("/me", authMiddleware, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const menusResult = await pool.query(
-    `SELECT DISTINCT m."MenuId", m."MenuNombre"
-     FROM usuarioperfil up
-     JOIN perfilmenu pm ON up."PerfilId" = pm."PerfilId"
-     JOIN menu m ON pm."MenuId" = m."MenuId"
-     WHERE up."UsuarioId" = $1`,
-    [req.userId]
-  );
+  const usuario = userResult.rows[0];
+  let menusResult;
+  if (usuario.UsuarioIsAdmin === "S") {
+    menusResult = await pool.query('SELECT "MenuId", "MenuNombre" FROM menu');
+  } else {
+    menusResult = await pool.query(
+      `SELECT DISTINCT m."MenuId", m."MenuNombre"
+       FROM usuarioperfil up
+       JOIN perfilmenu pm ON up."PerfilId" = pm."PerfilId"
+       JOIN menu m ON pm."MenuId" = m."MenuId"
+       WHERE up."UsuarioId" = $1`,
+      [req.userId]
+    );
+  }
 
   res.json({
-    usuario: userResult.rows[0],
+    usuario,
     menus: menusResult.rows,
   });
 });

@@ -3,8 +3,8 @@ import { api } from "@/lib/api";
 
 export interface Curso {
   CursoId: number;
-  Nombre: string;
-  Importe: number;
+  CursoNombre: string;
+  CursoImporte: number;
 }
 
 export function useCursos() {
@@ -17,7 +17,7 @@ export function useCursos() {
 export function useCrearCurso() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Curso, "CursoId">) => api.post("/cursos", data),
+    mutationFn: (data: Record<string, unknown>) => api.post("/cursos", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cursos"] }),
   });
 }
@@ -25,7 +25,7 @@ export function useCrearCurso() {
 export function useActualizarCurso() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: Partial<Curso> & { id: number }) =>
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) =>
       api.put(`/cursos/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cursos"] }),
   });

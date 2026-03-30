@@ -2,11 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface Pago {
-  PagoId: number;
-  Fecha: string;
+  PagoEmpleadoId: number;
+  PagoEmpleadoFecha: string;
   EmpleadoId: number;
-  Monto: number;
-  Empleado?: { Nombre: string; Apellido: string };
+  PagoEmpleadoEntregaMonto: number;
+  PagoEmpleadoSaldoMonto: number;
+  UsuarioId: string;
+  PagoEmpleadoNroRecibo: number;
+  EmpleadoNombre?: string;
+  EmpleadoApellido?: string;
+  EmpleadoCI?: string;
+  UsuarioNombre?: string;
+  UsuarioApellido?: string;
 }
 
 interface FiltrosPagos {
@@ -34,8 +41,7 @@ export function usePagos(filtros: FiltrosPagos = {}) {
 export function useCrearPago() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Pago, "PagoId" | "Empleado">) =>
-      api.post("/pagos", data),
+    mutationFn: (data: Record<string, unknown>) => api.post("/pagos", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pagos"] }),
   });
 }

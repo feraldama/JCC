@@ -13,15 +13,16 @@ import { api } from "./api";
 
 interface Menu {
   MenuId: string;
-  Nombre: string;
+  MenuNombre: string;
 }
 
 interface Usuario {
   UsuarioId: string;
-  Nombre: string;
-  Apellido: string;
-  Correo: string;
-  Admin: boolean;
+  UsuarioNombre: string;
+  UsuarioApellido: string;
+  UsuarioCorreo: string;
+  UsuarioIsAdmin: string;
+  UsuarioEstado: string;
 }
 
 interface AuthState {

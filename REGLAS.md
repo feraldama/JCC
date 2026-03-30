@@ -92,7 +92,8 @@
 ## Reglas de negocio
 
 1. **Autenticación**: Solo usuarios con UsuarioEstado = 'A' pueden ingresar.
-2. **Autorización**: El menú visible depende de los perfiles asignados al usuario (usuario → usuarioperfil → perfil → perfilmenu → menu).
+2. **Autorización**: Si UsuarioIsAdmin = 'S' (Super Usuario), tiene acceso a TODOS los menús sin necesidad de perfiles. Si UsuarioIsAdmin = 'N' (Operador), el menú visible depende de los perfiles asignados (usuario → usuarioperfil → perfil → perfilmenu → menu).
+3. **Campos de la DB**: Todos los campos usan el prefijo de la tabla (ej: UsuarioNombre, AlumnoCI). El frontend debe usar estos nombres exactos, sin mapear a nombres cortos.
 3. **Cobranza**: Cada cobro queda vinculado al alumno y al usuario que lo registró.
 4. **Facturación**: Los comprobantes deben respetar el rango del talonario (FacturaDesde - FacturaHasta) y el timbrado vigente.
 5. **Mora**: Se calcula en base a CobranzaDiasMora, afectando el monto total.
@@ -111,3 +112,55 @@
 4. Nombres de columnas en la DB usan PascalCase (ej: AlumnoNombre, CursoId).
 5. Las PKs autoincrementales usan secuencias de PostgreSQL.
 6. Las tablas intermedias (perfilmenu, usuarioperfil) tienen PK compuesta.
+
+---
+
+## Cómo agregar una nueva pantalla/menú
+
+Para crear una nueva pantalla en el sistema se deben seguir estos 3 pasos:
+
+### Paso 1: Base de datos
+Insertar el menú en la tabla `menu`:
+```sql
+INSERT INTO menu ("MenuId", "MenuNombre") VALUES ('nombre_menu', 'Nombre Visible');
+```
+
+### Paso 2: Sidebar
+Agregar la ruta en el objeto `menuRoutes` de `frontend/src/components/layout/Sidebar.tsx`:
+```ts
+nombre_menu: { path: "/dashboard/nombre_menu", label: "Nombre Visible", icon: IconoDeLucide },
+```
+- El `MenuId` en la DB debe coincidir (en minúsculas) con la key en `menuRoutes`.
+- El ícono debe ser de `lucide-react`.
+
+### Paso 3: Crear la página
+Crear el archivo `frontend/src/app/dashboard/nombre_menu/page.tsx`.
+- Si necesita backend: crear la ruta en `backend/src/routes/`, el hook en `frontend/src/hooks/` y montar la ruta en `backend/src/index.ts`.
+- En `index.ts`, las rutas con sub-paths (`/:id/algo`) deben ir ANTES que las rutas con parámetro genérico (`/:id`).
+
+### Permisos
+- **Super Usuario** (`UsuarioIsAdmin = 'S'`): ve todas las pantallas automáticamente. El Sidebar muestra todos los `menuRoutes` sin consultar la DB.
+- **Operador** (`UsuarioIsAdmin = 'N'`): solo ve los menús asignados a sus perfiles. Asignar desde: Perfiles → botón Menús, y Usuarios → botón Perfiles.
+
+---
+
+## Reglas de diseño y responsive
+
+1. **Todos los componentes deben ser responsive.** Usar breakpoints de Tailwind: `sm:`, `md:`, `lg:`, `xl:`.
+2. **Mobile first**: Diseñar primero para móvil, luego escalar a desktop.
+3. **Sidebar**: En mobile se oculta y se muestra con botón hamburguesa. En desktop queda fijo.
+4. **Tablas**: En mobile se convierten en cards apiladas. En desktop se muestran como tabla normal.
+5. **Modales**: En mobile ocupan casi toda la pantalla (`w-full mx-4`). En desktop tienen ancho máximo centrado.
+6. **Formularios**: En mobile los campos van apilados. En desktop se usan grids de 2 o 3 columnas (`grid-cols-1 md:grid-cols-2`).
+7. **Botones de acción**: En mobile se agrupan en una sola columna. En desktop van en fila.
+8. **Tipografía**: Títulos escalan con `text-xl md:text-2xl`. Cuerpo usa `text-sm md:text-base`.
+9. **Spacing**: Usar `p-4 md:p-6 lg:p-8` para paddings principales.
+10. **Íconos**: Usar exclusivamente `lucide-react` para todos los íconos del proyecto.
+11. **Paleta de colores**:
+    - Primario: `blue-600` (botones, links, acciones principales)
+    - Peligro: `red-600` (eliminar, errores)
+    - Éxito: `green-600` (confirmaciones, estados activos)
+    - Fondo: `gray-50` para el contenido principal, `slate-800` para el sidebar
+    - Cards: `white` con `shadow-sm` y bordes `gray-200`
+12. **Componentes reutilizables**: Todos los nuevos componentes deben seguir estas reglas de responsive y estilo.
+13. **Cursor pointer**: Todo elemento clickeable (botones, links, selects, checkboxes, radios) debe tener `cursor: pointer`. Esto se aplica globalmente desde `globals.css`.

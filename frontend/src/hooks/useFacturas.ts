@@ -3,9 +3,9 @@ import { api } from "@/lib/api";
 
 export interface Factura {
   FacturaId: number;
-  Timbrado: string;
-  NumeroDesde: number;
-  NumeroHasta: number;
+  FacturaTimbrado: number;
+  FacturaDesde: number;
+  FacturaHasta: number;
 }
 
 export function useFacturas() {
@@ -18,8 +18,7 @@ export function useFacturas() {
 export function useCrearFactura() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Factura, "FacturaId">) =>
-      api.post("/facturas", data),
+    mutationFn: (data: Record<string, unknown>) => api.post("/facturas", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["facturas"] }),
   });
 }
@@ -27,7 +26,7 @@ export function useCrearFactura() {
 export function useActualizarFactura() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: Partial<Factura> & { id: number }) =>
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) =>
       api.put(`/facturas/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["facturas"] }),
   });

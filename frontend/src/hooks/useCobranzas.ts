@@ -3,13 +3,24 @@ import { api } from "@/lib/api";
 
 export interface Cobranza {
   CobranzaId: number;
-  Fecha: string;
+  CobranzaFecha: string;
   AlumnoId: number;
-  MesPagado: string;
-  Subtotal: number;
-  Mora: number;
-  Total: number;
-  Alumno?: { Nombre: string; Apellido: string };
+  CobranzaMesPagado: string;
+  CobranzaMes: number;
+  CobranzaSubtotalCuota: number;
+  CobranzaDiasMora: number;
+  CobranzaExamen: number;
+  CobranzaDescuento: number;
+  UsuarioId: string;
+  CobranzaNroComprobante: number;
+  CobranzaTimbrado: number;
+  CobranzaFebrero: string;
+  CobranzaAdicionalDetalle: string;
+  AlumnoNombre?: string;
+  AlumnoApellido?: string;
+  AlumnoCI?: string;
+  UsuarioNombre?: string;
+  UsuarioApellido?: string;
 }
 
 interface FiltrosCobranzas {
@@ -37,8 +48,7 @@ export function useCobranzas(filtros: FiltrosCobranzas = {}) {
 export function useCrearCobranza() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Cobranza, "CobranzaId" | "Alumno">) =>
-      api.post("/cobranzas", data),
+    mutationFn: (data: Record<string, unknown>) => api.post("/cobranzas", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cobranzas"] }),
   });
 }

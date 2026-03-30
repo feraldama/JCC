@@ -8,6 +8,7 @@ import {
   useEliminarFactura,
   type Factura,
 } from "@/hooks/useFacturas";
+import { Plus, Pencil, Trash2, X, Loader2, FileText } from "lucide-react";
 
 export default function FacturasPage() {
   const { data: facturas, isLoading } = useFacturas();
@@ -17,17 +18,17 @@ export default function FacturasPage() {
 
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState<Factura | null>(null);
-  const [form, setForm] = useState({ Timbrado: "", NumeroDesde: 0, NumeroHasta: 0 });
+  const [form, setForm] = useState({ FacturaTimbrado: 0, FacturaDesde: 0, FacturaHasta: 0 });
 
   function abrirCrear() {
     setEditando(null);
-    setForm({ Timbrado: "", NumeroDesde: 0, NumeroHasta: 0 });
+    setForm({ FacturaTimbrado: 0, FacturaDesde: 0, FacturaHasta: 0 });
     setModal(true);
   }
 
   function abrirEditar(f: Factura) {
     setEditando(f);
-    setForm({ Timbrado: f.Timbrado, NumeroDesde: f.NumeroDesde, NumeroHasta: f.NumeroHasta });
+    setForm({ FacturaTimbrado: f.FacturaTimbrado, FacturaDesde: f.FacturaDesde, FacturaHasta: f.FacturaHasta });
     setModal(true);
   }
 
@@ -42,64 +43,154 @@ export default function FacturasPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Facturas / Talonarios</h1>
-        <button onClick={abrirCrear} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+      {/* Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Facturas / Talonarios</h1>
+          <p className="mt-1 text-sm text-gray-500">Control de talonarios y numeracion de facturas</p>
+        </div>
+        <button
+          onClick={abrirCrear}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+        >
+          <Plus size={18} />
           Nuevo Talonario
         </button>
       </div>
 
+      {/* Content */}
       {isLoading ? (
-        <p className="text-gray-500">Cargando...</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg bg-white shadow">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-100 text-gray-600">
-              <tr>
-                <th className="px-4 py-3">Timbrado</th>
-                <th className="px-4 py-3">Desde</th>
-                <th className="px-4 py-3">Hasta</th>
-                <th className="px-4 py-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {facturas?.map((f) => (
-                <tr key={f.FacturaId} className="border-t border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3">{f.Timbrado}</td>
-                  <td className="px-4 py-3">{f.NumeroDesde}</td>
-                  <td className="px-4 py-3">{f.NumeroHasta}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button onClick={() => abrirEditar(f)} className="text-blue-600 hover:underline">Editar</button>
-                    <button onClick={() => eliminar.mutate(f.FacturaId)} className="text-red-600 hover:underline">Eliminar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         </div>
+      ) : !facturas?.length ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="rounded-full bg-gray-100 p-3 mb-3">
+            <FileText className="h-6 w-6 text-gray-400" />
+          </div>
+          <p className="text-sm text-gray-500">No hay talonarios para mostrar</p>
+        </div>
+      ) : (
+        <>
+          {/* Vista mobile - cards */}
+          <div className="space-y-3 md:hidden">
+            {facturas?.map((f) => (
+              <div key={f.FacturaId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">Timbrado: {f.FacturaTimbrado}</p>
+                    <p className="mt-1 text-sm text-gray-500">Desde: {f.FacturaDesde} - Hasta: {f.FacturaHasta}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => abrirEditar(f)}
+                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={() => eliminar.mutate(f.FacturaId)}
+                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Vista desktop - tabla */}
+          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Timbrado</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Desde</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Hasta</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {facturas?.map((f) => (
+                  <tr key={f.FacturaId} className="transition-colors hover:bg-gray-50/50">
+                    <td className="px-4 py-3.5 text-sm text-gray-700">{f.FacturaTimbrado}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-700">{f.FacturaDesde}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-700">{f.FacturaHasta}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => abrirEditar(f)}
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => eliminar.mutate(f.FacturaId)}
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
+      {/* Modal */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-lg font-bold">{editando ? "Editar Talonario" : "Nuevo Talonario"}</h2>
-            <div className="space-y-3">
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={() => setModal(false)}>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:mx-4 sm:max-w-lg sm:rounded-2xl md:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">{editando ? "Editar Talonario" : "Nuevo Talonario"}</h2>
+              <button onClick={() => setModal(false)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Timbrado</label>
-                <input value={form.Timbrado} onChange={(e) => setForm({ ...form, Timbrado: e.target.value })} className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Timbrado</label>
+                <input
+                  type="number"
+                  value={form.FacturaTimbrado}
+                  onChange={(e) => setForm({ ...form, FacturaTimbrado: Number(e.target.value) })}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Numero Desde</label>
-                <input type="number" value={form.NumeroDesde} onChange={(e) => setForm({ ...form, NumeroDesde: Number(e.target.value) })} className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Numero Desde</label>
+                <input
+                  type="number"
+                  value={form.FacturaDesde}
+                  onChange={(e) => setForm({ ...form, FacturaDesde: Number(e.target.value) })}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Numero Hasta</label>
-                <input type="number" value={form.NumeroHasta} onChange={(e) => setForm({ ...form, NumeroHasta: Number(e.target.value) })} className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Numero Hasta</label>
+                <input
+                  type="number"
+                  value={form.FacturaHasta}
+                  onChange={(e) => setForm({ ...form, FacturaHasta: Number(e.target.value) })}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
               </div>
             </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setModal(false)} className="rounded bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300">Cancelar</button>
-              <button onClick={guardar} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Guardar</button>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
+                Guardar
+              </button>
             </div>
           </div>
         </div>

@@ -3,12 +3,12 @@ import { api } from "@/lib/api";
 
 export interface Alumno {
   AlumnoId: number;
-  CodigoIdentificador: string;
-  CI: string;
-  Nombre: string;
-  Apellido: string;
+  AlumnoCodigoIdentificador: number;
+  AlumnoCI: string;
+  AlumnoNombre: string;
+  AlumnoApellido: string;
   CursoId: number;
-  Curso?: { Nombre: string };
+  CursoNombre?: string;
 }
 
 interface FiltrosAlumnos {
@@ -36,8 +36,7 @@ export function useAlumnos(filtros: FiltrosAlumnos = {}) {
 export function useCrearAlumno() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Alumno, "AlumnoId" | "Curso">) =>
-      api.post("/alumnos", data),
+    mutationFn: (data: Record<string, unknown>) => api.post("/alumnos", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumnos"] }),
   });
 }
@@ -45,7 +44,7 @@ export function useCrearAlumno() {
 export function useActualizarAlumno() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: Partial<Alumno> & { id: number }) =>
+    mutationFn: ({ id, ...data }: { id: number } & Record<string, unknown>) =>
       api.put(`/alumnos/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumnos"] }),
   });

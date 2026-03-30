@@ -3,13 +3,13 @@ import { api } from "@/lib/api";
 
 export interface Perfil {
   PerfilId: number;
-  Nombre: string;
-  Menus?: { MenuId: string; Nombre: string }[];
+  PerfilDescripcion: string;
+  menus?: { MenuId: string; MenuNombre: string }[];
 }
 
 export interface Menu {
   MenuId: string;
-  Nombre: string;
+  MenuNombre: string;
 }
 
 export function usePerfiles() {
@@ -29,7 +29,7 @@ export function useMenus() {
 export function useCrearPerfil() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { Nombre: string }) => api.post("/perfiles", data),
+    mutationFn: (data: { PerfilDescripcion: string }) => api.post("/perfiles", data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perfiles"] }),
   });
 }
@@ -37,7 +37,7 @@ export function useCrearPerfil() {
 export function useActualizarPerfil() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: number; Nombre: string }) =>
+    mutationFn: ({ id, ...data }: { id: number; PerfilDescripcion: string }) =>
       api.put(`/perfiles/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perfiles"] }),
   });
@@ -54,8 +54,8 @@ export function useEliminarPerfil() {
 export function useAsignarMenus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, menuIds }: { id: number; menuIds: string[] }) =>
-      api.post(`/perfiles/${id}/menus`, { menuIds }),
+    mutationFn: ({ id, menus }: { id: number; menus: string[] }) =>
+      api.post(`/perfiles/${id}/menus`, { menus }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["perfiles"] }),
   });
 }
