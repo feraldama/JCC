@@ -5,40 +5,48 @@ const router = Router();
 
 // GET / - listar registros con JOIN a alumno
 router.get("/", async (req: Request, res: Response) => {
-  const { fechaDesde, fechaHasta, tipo, alumnoId } = req.query;
-  let query = `
-    SELECT r.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI"
-    FROM registro r
-    JOIN alumno a ON r."AlumnoId" = a."AlumnoId"
-    WHERE 1=1
-  `;
+  const { fechaDesde, fechaHasta, tipo, alumnoId, busqueda, page, limit } = req.query;
+  let where = "WHERE 1=1";
   const params: any[] = [];
-  let paramIndex = 1;
+  let i = 1;
 
+  if (busqueda) {
+    where += ` AND (a."AlumnoNombre" ILIKE $${i} OR a."AlumnoApellido" ILIKE $${i} OR r."RegistroNroComprobante" ILIKE $${i})`;
+    params.push(`%${busqueda}%`);
+    i++;
+  }
   if (fechaDesde) {
-    query += ` AND r."RegistroFecha" >= $${paramIndex}`;
+    where += ` AND r."RegistroFecha" >= $${i}`;
     params.push(fechaDesde);
-    paramIndex++;
+    i++;
   }
   if (fechaHasta) {
-    query += ` AND r."RegistroFecha" <= $${paramIndex}`;
+    where += ` AND r."RegistroFecha" <= $${i}`;
     params.push(fechaHasta);
-    paramIndex++;
+    i++;
   }
   if (tipo) {
-    query += ` AND r."RegistroTipoRegistro" = $${paramIndex}`;
+    where += ` AND r."RegistroTipoRegistro" = $${i}`;
     params.push(tipo);
-    paramIndex++;
+    i++;
   }
   if (alumnoId) {
-    query += ` AND r."AlumnoId" = $${paramIndex}`;
+    where += ` AND r."AlumnoId" = $${i}`;
     params.push(alumnoId);
-    paramIndex++;
+    i++;
   }
 
-  query += ' ORDER BY r."RegistroId" DESC';
-  const result = await pool.query(query, params);
-  res.json(result.rows);
+  const baseFrom = `FROM registro r JOIN alumno a ON r."AlumnoId" = a."AlumnoId" ${where}`;
+  const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${baseFrom}`, params);
+
+  const pageNum = Math.max(0, Number(page) || 0);
+  const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+  const dataParams = [...params, pageSize, pageNum * pageSize];
+  const result = await pool.query(
+    `SELECT r.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI" ${baseFrom} ORDER BY r."RegistroId" DESC LIMIT $${i} OFFSET $${i + 1}`,
+    dataParams
+  );
+  res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
 // GET /:id - obtener registro por id

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Alumno {
   AlumnoId: number;
@@ -11,25 +12,24 @@ export interface Alumno {
   CursoNombre?: string;
 }
 
-interface FiltrosAlumnos {
+interface FiltrosAlumnos extends PaginationParams {
   nombre?: string;
   ci?: string;
   cursoId?: number;
 }
 
-function buildQuery(filtros: FiltrosAlumnos) {
-  const params = new URLSearchParams();
-  if (filtros.nombre) params.set("nombre", filtros.nombre);
-  if (filtros.ci) params.set("ci", filtros.ci);
-  if (filtros.cursoId) params.set("cursoId", String(filtros.cursoId));
-  const q = params.toString();
-  return q ? `?${q}` : "";
+export function useAlumnos(filtros: FiltrosAlumnos = {}) {
+  return useQuery<PaginatedResponse<Alumno>>({
+    queryKey: ["alumnos", filtros],
+    queryFn: () => api.get(`/alumnos${buildPaginationQuery(filtros)}`),
+  });
 }
 
-export function useAlumnos(filtros: FiltrosAlumnos = {}) {
-  return useQuery<Alumno[]>({
-    queryKey: ["alumnos", filtros],
-    queryFn: () => api.get(`/alumnos${buildQuery(filtros)}`),
+export function useBuscarAlumnos(busqueda: string) {
+  return useQuery<PaginatedResponse<Alumno>>({
+    queryKey: ["alumnos-buscar", busqueda],
+    queryFn: () => api.get(`/alumnos${buildPaginationQuery({ busqueda, limit: 20 })}`),
+    enabled: busqueda.trim().length >= 2,
   });
 }
 

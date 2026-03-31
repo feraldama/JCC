@@ -9,9 +9,13 @@ import {
   type Factura,
 } from "@/hooks/useFacturas";
 import { Plus, Pencil, Trash2, X, Loader2, FileText } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 export default function FacturasPage() {
-  const { data: facturas, isLoading } = useFacturas();
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = useFacturas({ busqueda: busqueda || undefined, page, limit: 10 });
+  const facturas = resp?.data;
   const crear = useCrearFactura();
   const actualizar = useActualizarFactura();
   const eliminar = useEliminarFactura();
@@ -58,88 +62,39 @@ export default function FacturasPage() {
         </button>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !facturas?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-gray-100 p-3 mb-3">
-            <FileText className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay talonarios para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {facturas?.map((f) => (
-              <div key={f.FacturaId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">Timbrado: {f.FacturaTimbrado}</p>
-                    <p className="mt-1 text-sm text-gray-500">Desde: {f.FacturaDesde} - Hasta: {f.FacturaHasta}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => abrirEditar(f)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => eliminar.mutate(f.FacturaId)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Timbrado</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Desde</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Hasta</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {facturas?.map((f) => (
-                  <tr key={f.FacturaId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{f.FacturaTimbrado}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{f.FacturaDesde}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{f.FacturaHasta}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => abrirEditar(f)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => eliminar.mutate(f.FacturaId)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={facturas}
+        isLoading={isLoading}
+        keyExtractor={(f) => f.FacturaId}
+        emptyIcon={FileText}
+        emptyText="No hay talonarios para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar por timbrado..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "Timbrado", render: (f) => f.FacturaTimbrado },
+          { header: "Desde", render: (f) => f.FacturaDesde },
+          { header: "Hasta", render: (f) => f.FacturaHasta },
+        ]}
+        mobileCard={(f) => (
+          <>
+            <p className="font-medium text-gray-900">Timbrado: {f.FacturaTimbrado}</p>
+            <p className="mt-1 text-sm text-gray-500">Desde: {f.FacturaDesde} - Hasta: {f.FacturaHasta}</p>
+          </>
+        )}
+        actions={(f) => (
+          <>
+            <button onClick={() => abrirEditar(f)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+              <Pencil size={15} />
+            </button>
+            <button onClick={() => { if (confirm("¿Eliminar este talonario?")) eliminar.mutate(f.FacturaId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      />
 
       {/* Modal */}
       {modal && (
@@ -188,8 +143,8 @@ export default function FacturasPage() {
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending || actualizar.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending || actualizar.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

@@ -8,8 +8,9 @@ import {
   useEliminarRegistro,
   type Registro,
 } from "@/hooks/useRegistros";
-import { useAlumnos } from "@/hooks/useAlumnos";
-import { formatGuaranies } from "@/lib/format";
+import { formatGuaranies, formatFecha } from "@/lib/format";
+import DataTable from "@/components/DataTable";
+import AlumnoPicker from "@/components/AlumnoPicker";
 import { Plus, Pencil, Trash2, X, Loader2, ClipboardList, Search } from "lucide-react";
 
 export default function RegistrosPage() {
@@ -40,13 +41,18 @@ export default function RegistrosPage() {
     RegistroTimbradoAsociado: "",
   });
 
-  const { data: registros, isLoading } = useRegistros({
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = useRegistros({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
     tipo: filtroTipo || undefined,
     alumnoId: filtroAlumnoId,
+    busqueda: busqueda || undefined,
+    page,
+    limit: 10,
   });
-  const { data: alumnos } = useAlumnos();
+  const registros = resp?.data;
   const crear = useCrearRegistro();
   const actualizar = useActualizarRegistro();
   const eliminar = useEliminarRegistro();
@@ -151,112 +157,53 @@ export default function RegistrosPage() {
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
-          <select
-            value={filtroAlumnoId ?? ""}
-            onChange={(e) => setFiltroAlumnoId(e.target.value ? Number(e.target.value) : undefined)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          >
-            <option value="">Todos los alumnos</option>
-            {alumnos?.map((a) => (
-              <option key={a.AlumnoId} value={a.AlumnoId}>{a.AlumnoNombre} {a.AlumnoApellido}</option>
-            ))}
-          </select>
+          <AlumnoPicker
+            value={filtroAlumnoId ?? 0}
+            onChange={(id) => setFiltroAlumnoId(id || undefined)}
+          />
         </div>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !registros?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-gray-100 p-3 mb-3">
-            <ClipboardList className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay registros para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {registros?.map((r) => (
-              <div key={r.RegistroId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{r.RegistroTipoRegistro}</p>
-                    <p className="mt-1 text-sm text-gray-500">{r.RegistroFecha} - {formatGuaranies(r.RegistroTotal)}</p>
-                    {r.AlumnoNombre && (
-                      <p className="mt-1 text-sm text-gray-500">{r.AlumnoNombre} {r.AlumnoApellido}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => abrirEditar(r)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => eliminar.mutate(r.RegistroId)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Nro Comprobante</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">IVA 10%</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">IVA 5%</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Alumno</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {registros?.map((r) => (
-                  <tr key={r.RegistroId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{r.RegistroFecha}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{r.RegistroTipoRegistro}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{r.RegistroNroComprobante}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{formatGuaranies(r.RegistroIva10)}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{formatGuaranies(r.RegistroIva5)}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{formatGuaranies(r.RegistroTotal)}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{r.AlumnoNombre ? `${r.AlumnoNombre} ${r.AlumnoApellido}` : "-"}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => abrirEditar(r)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => eliminar.mutate(r.RegistroId)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={registros}
+        isLoading={isLoading}
+        keyExtractor={(r) => r.RegistroId}
+        emptyIcon={ClipboardList}
+        emptyText="No hay registros para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar por comprobante o alumno..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "Fecha", render: (r) => formatFecha(r.RegistroFecha) },
+          { header: "Tipo", render: (r) => r.RegistroTipoRegistro },
+          { header: "Nro Comprobante", render: (r) => r.RegistroNroComprobante },
+          { header: "IVA 10%", render: (r) => formatGuaranies(r.RegistroIva10) },
+          { header: "IVA 5%", render: (r) => formatGuaranies(r.RegistroIva5) },
+          { header: "Total", render: (r) => formatGuaranies(r.RegistroTotal) },
+          { header: "Alumno", render: (r) => r.AlumnoNombre ? `${r.AlumnoNombre} ${r.AlumnoApellido}` : "-" },
+        ]}
+        mobileCard={(r) => (
+          <>
+            <p className="font-medium text-gray-900">{r.RegistroTipoRegistro}</p>
+            <p className="mt-1 text-sm text-gray-500">{formatFecha(r.RegistroFecha)} - {formatGuaranies(r.RegistroTotal)}</p>
+            {r.AlumnoNombre && (
+              <p className="mt-1 text-sm text-gray-500">{r.AlumnoNombre} {r.AlumnoApellido}</p>
+            )}
+          </>
+        )}
+        actions={(r) => (
+          <>
+            <button onClick={() => abrirEditar(r)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+              <Pencil size={15} />
+            </button>
+            <button onClick={() => { if (confirm("¿Eliminar este registro?")) eliminar.mutate(r.RegistroId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      />
 
       {/* Modal */}
       {modal && (
@@ -410,24 +357,18 @@ export default function RegistrosPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Alumno (opcional)</label>
-                <select
-                  value={form.AlumnoId ?? ""}
-                  onChange={(e) => setForm({ ...form, AlumnoId: Number(e.target.value) || 0 })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="">Sin alumno</option>
-                  {alumnos?.map((a) => (
-                    <option key={a.AlumnoId} value={a.AlumnoId}>{a.AlumnoNombre} {a.AlumnoApellido}</option>
-                  ))}
-                </select>
+                <AlumnoPicker
+                  value={form.AlumnoId}
+                  onChange={(id) => setForm({ ...form, AlumnoId: id })}
+                />
               </div>
             </div>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending || actualizar.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending || actualizar.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

@@ -4,11 +4,28 @@ import { pool } from "../config/db";
 const router = Router();
 
 // GET / - listar usuarios (sin contrasena)
-router.get("/", async (_req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
+  const { busqueda, page, limit } = req.query;
+  let where = "WHERE 1=1";
+  const params: any[] = [];
+  let i = 1;
+
+  if (busqueda) {
+    where += ` AND ("UsuarioId" ILIKE $${i} OR "UsuarioNombre" ILIKE $${i} OR "UsuarioApellido" ILIKE $${i} OR "UsuarioCorreo" ILIKE $${i})`;
+    params.push(`%${busqueda}%`);
+    i++;
+  }
+
+  const countResult = await pool.query(`SELECT COUNT(*)::int AS total FROM usuario ${where}`, params);
+
+  const pageNum = Math.max(0, Number(page) || 0);
+  const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+  const dataParams = [...params, pageSize, pageNum * pageSize];
   const result = await pool.query(
-    'SELECT "UsuarioId", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado" FROM usuario ORDER BY "UsuarioId"'
+    `SELECT "UsuarioId", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado" FROM usuario ${where} ORDER BY "UsuarioId" LIMIT $${i} OFFSET $${i + 1}`,
+    dataParams
   );
-  res.json(result.rows);
+  res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
 // POST / - crear usuario

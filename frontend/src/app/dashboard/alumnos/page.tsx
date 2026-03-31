@@ -10,6 +10,7 @@ import {
 } from "@/hooks/useAlumnos";
 import { useCursos } from "@/hooks/useCursos";
 import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 export default function AlumnosPage() {
   const [filtroNombre, setFiltroNombre] = useState("");
@@ -25,12 +26,19 @@ export default function AlumnosPage() {
     CursoId: 0,
   });
 
-  const { data: alumnos, isLoading } = useAlumnos({
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = useAlumnos({
     nombre: filtroNombre || undefined,
     ci: filtroCI || undefined,
     cursoId: filtroCursoId,
+    busqueda: busqueda || undefined,
+    page,
+    limit: 10,
   });
-  const { data: cursos } = useCursos();
+  const alumnos = resp?.data;
+  const { data: cursosResp } = useCursos();
+  const cursos = cursosResp?.data;
   const crear = useCrearAlumno();
   const actualizar = useActualizarAlumno();
   const eliminar = useEliminarAlumno();
@@ -112,92 +120,42 @@ export default function AlumnosPage() {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !alumnos?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-gray-100 p-3 mb-3">
-            <GraduationCap className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay alumnos para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {alumnos?.map((a) => (
-              <div key={a.AlumnoId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{a.AlumnoNombre} {a.AlumnoApellido}</p>
-                    <p className="mt-1 text-sm text-gray-500">CI: {a.AlumnoCI}</p>
-                    <p className="text-sm text-gray-500">{a.CursoNombre}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => abrirEditar(a)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => eliminar.mutate(a.AlumnoId)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Codigo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">CI</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Nombre</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Apellido</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Curso</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {alumnos?.map((a) => (
-                  <tr key={a.AlumnoId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{a.AlumnoCodigoIdentificador}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{a.AlumnoCI}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{a.AlumnoNombre}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{a.AlumnoApellido}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{a.CursoNombre}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => abrirEditar(a)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => eliminar.mutate(a.AlumnoId)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={alumnos}
+        isLoading={isLoading}
+        keyExtractor={(a) => a.AlumnoId}
+        emptyIcon={GraduationCap}
+        emptyText="No hay alumnos para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar por nombre, apellido o CI..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "Codigo", render: (a) => a.AlumnoCodigoIdentificador },
+          { header: "CI", render: (a) => a.AlumnoCI },
+          { header: "Nombre", render: (a) => a.AlumnoNombre },
+          { header: "Apellido", render: (a) => a.AlumnoApellido },
+          { header: "Curso", render: (a) => a.CursoNombre },
+        ]}
+        mobileCard={(a) => (
+          <>
+            <p className="font-medium text-gray-900">{a.AlumnoNombre} {a.AlumnoApellido}</p>
+            <p className="mt-1 text-sm text-gray-500">CI: {a.AlumnoCI}</p>
+            <p className="text-sm text-gray-500">{a.CursoNombre}</p>
+          </>
+        )}
+        actions={(a) => (
+          <>
+            <button onClick={() => abrirEditar(a)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+              <Pencil size={15} />
+            </button>
+            <button onClick={() => { if (confirm("¿Eliminar este alumno?")) eliminar.mutate(a.AlumnoId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      />
 
       {/* Modal */}
       {modal && (
@@ -265,8 +223,8 @@ export default function AlumnosPage() {
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending || actualizar.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending || actualizar.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

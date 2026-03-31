@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model alumno {
+  AlumnoId                  Int        @id @default(autoincrement())
+  AlumnoCodigoIdentificador Int        @db.SmallInt
+  AlumnoCI                  String     @db.VarChar(20)
+  AlumnoNombre              String     @db.VarChar(30)
+  AlumnoApellido            String     @db.VarChar(30)
+  CursoId                   Int
+  curso                     curso      @relation(fields: [CursoId], references: [CursoId], onDelete: NoAction, onUpdate: NoAction, map: "IALUMNO1")
+  cobranza                  cobranza[]
+  registro                  registro[]
+
+  @@index([CursoId], map: "idx_IALUMNO1")
+}
+
+model cobranza {
+  CobranzaId               Int      @id @default(autoincrement())
+  CobranzaFecha            DateTime @db.Date
+  AlumnoId                 Int
+  CobranzaMesPagado        String   @db.VarChar(30)
+  CobranzaMes              Int      @db.SmallInt
+  CobranzaSubtotalCuota    BigInt
+  CobranzaDiasMora         Int      @db.SmallInt
+  CobranzaExamen           BigInt
+  CobranzaDescuento        BigInt
+  UsuarioId                String   @db.VarChar(12)
+  CobranzaNroComprobante   Int
+  CobranzaTimbrado         Int
+  CobranzaFebrero          String   @db.VarChar(1)
+  CobranzaAdicionalDetalle String   @db.VarChar(30)
+  usuario                  usuario  @relation(fields: [UsuarioId], references: [UsuarioId], onDelete: NoAction, onUpdate: NoAction, map: "ICOBRANZA1")
+  alumno                   alumno   @relation(fields: [AlumnoId], references: [AlumnoId], onDelete: NoAction, onUpdate: NoAction, map: "ICOBRANZA2")
+
+  @@index([UsuarioId], map: "idx_ICOBRANZA1")
+  @@index([AlumnoId], map: "idx_ICOBRANZA2")
+}
+
+model curso {
+  CursoId      Int      @id @default(autoincrement())
+  CursoNombre  String   @db.VarChar(30)
+  CursoImporte BigInt
+  alumno       alumno[]
+}
+
+model empleado {
+  EmpleadoId         Int            @id @default(autoincrement())
+  EmpleadoCI         String         @db.VarChar(20)
+  EmpleadoNombre     String         @db.VarChar(30)
+  EmpleadoApellido   String         @db.VarChar(30)
+  EmpleadoCobroMonto BigInt
+  pagoempleado       pagoempleado[]
+}
+
+model factura {
+  FacturaId       Int @id @default(autoincrement())
+  FacturaTimbrado Int
+  FacturaDesde    Int
+  FacturaHasta    Int
+}
+
+model menu {
+  MenuId     String       @id @db.VarChar(25)
+  MenuNombre String       @db.VarChar(30)
+  perfilmenu perfilmenu[]
+}
+
+model pagoempleado {
+  PagoEmpleadoId           Int      @id @default(autoincrement())
+  PagoEmpleadoFecha        DateTime @db.Date
+  EmpleadoId               Int
+  PagoEmpleadoEntregaMonto BigInt
+  PagoEmpleadoSaldoMonto   BigInt
+  UsuarioId                String   @db.VarChar(12)
+  PagoEmpleadoNroRecibo    BigInt
+  usuario                  usuario  @relation(fields: [UsuarioId], references: [UsuarioId], onDelete: NoAction, onUpdate: NoAction, map: "IPAGOEMPLEADO1")
+  empleado                 empleado @relation(fields: [EmpleadoId], references: [EmpleadoId], onDelete: NoAction, onUpdate: NoAction, map: "IPAGOEMPLEADO2")
+
+  @@index([UsuarioId], map: "idx_IPAGOEMPLEADO1")
+  @@index([EmpleadoId], map: "idx_IPAGOEMPLEADO2")
+}
+
+model perfil {
+  PerfilId          Int             @id @default(autoincrement())
+  PerfilDescripcion String          @db.VarChar(30)
+  perfilmenu        perfilmenu[]
+  usuarioperfil     usuarioperfil[]
+}
+
+model perfilmenu {
+  PerfilId Int
+  MenuId   String @db.VarChar(25)
+  menu     menu   @relation(fields: [MenuId], references: [MenuId], onDelete: NoAction, onUpdate: NoAction, map: "IPERFILMENU1")
+  perfil   perfil @relation(fields: [PerfilId], references: [PerfilId], onDelete: NoAction, onUpdate: NoAction, map: "IPERFILMENU2")
+
+  @@id([PerfilId, MenuId])
+  @@index([MenuId], map: "idx_IPERFILMENU1")
+}
+
+model registro {
+  RegistroId                  Int      @id @default(autoincrement())
+  RegistroTipoRegistro        Int      @db.SmallInt
+  AlumnoId                    Int
+  RegistroTipoComprobante     Int      @db.SmallInt
+  RegistroFecha               DateTime @db.Date
+  RegistroTimbrado            Int
+  RegistroNroComprobante      String   @db.VarChar(20)
+  RegistroIva10               BigInt
+  RegistroIva5                BigInt
+  RegistroIvaExento           BigInt
+  RegistroTotal               BigInt
+  RegistroCodigoCondicion     Int      @db.SmallInt
+  RegistroMonedaExtranjera    String   @db.VarChar(1)
+  RegistroImputaIva           String   @db.VarChar(1)
+  RegistroImputaIre           String   @db.VarChar(1)
+  RegistroImputaIrp           String   @db.VarChar(1)
+  RegistroComprobanteAsociado String   @db.VarChar(15)
+  RegistroTimbradoAsociado    String   @db.VarChar(8)
+  alumno                      alumno   @relation(fields: [AlumnoId], references: [AlumnoId], onDelete: NoAction, onUpdate: NoAction, map: "IREGISTRO1")
+
+  @@index([AlumnoId], map: "idx_IREGISTRO1")
+}
+
+model usuario {
+  UsuarioId         String          @id @db.VarChar(12)
+  UsuarioContrasena String          @db.VarChar(20)
+  UsuarioNombre     String          @db.VarChar(30)
+  UsuarioApellido   String          @db.VarChar(30)
+  UsuarioCorreo     String          @db.VarChar(100)
+  UsuarioIsAdmin    String          @db.VarChar(1)
+  UsuarioEstado     String          @db.VarChar(1)
+  cobranza          cobranza[]
+  pagoempleado      pagoempleado[]
+  usuarioperfil     usuarioperfil[]
+}
+
+model usuarioperfil {
+  UsuarioId String  @db.VarChar(12)
+  PerfilId  Int
+  perfil    perfil  @relation(fields: [PerfilId], references: [PerfilId], onDelete: NoAction, onUpdate: NoAction, map: "IUSUARIOPERFIL1")
+  usuario   usuario @relation(fields: [UsuarioId], references: [UsuarioId], onDelete: NoAction, onUpdate: NoAction, map: "IUSUARIOPERFIL2")
+
+  @@id([UsuarioId, PerfilId])
+  @@index([PerfilId], map: "idx_IUSUARIOPERFIL1")
+}

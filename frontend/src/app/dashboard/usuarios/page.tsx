@@ -12,9 +12,13 @@ import {
 } from "@/hooks/useUsuarios";
 import { usePerfiles } from "@/hooks/usePerfiles";
 import { Plus, Pencil, Trash2, X, Loader2, UserCog, Shield } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 export default function UsuariosPage() {
-  const { data: usuarios, isLoading } = useUsuarios();
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = useUsuarios({ busqueda: busqueda || undefined, page, limit: 10 });
+  const usuarios = resp?.data;
   const crear = useCrearUsuario();
   const actualizar = useActualizarUsuario();
   const eliminar = useEliminarUsuario();
@@ -24,7 +28,8 @@ export default function UsuariosPage() {
   const [usuarioPerfiles, setUsuarioPerfiles] = useState<string | null>(null);
   const [perfilesSeleccionados, setPerfilesSeleccionados] = useState<number[]>([]);
   const [editando, setEditando] = useState<Usuario | null>(null);
-  const { data: todosPerfiles } = usePerfiles();
+  const { data: todosPerfilesResp } = usePerfiles();
+  const todosPerfiles = todosPerfilesResp?.data;
   const { data: perfilesAsignados } = usePerfilesUsuario(usuarioPerfiles);
   const asignarPerfiles = useAsignarPerfiles();
   const [form, setForm] = useState({
@@ -114,105 +119,62 @@ export default function UsuariosPage() {
         </button>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !usuarios?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-3 rounded-full bg-gray-100 p-3">
-            <UserCog className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay usuarios para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {usuarios.map((u) => (
-              <div key={u.UsuarioId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{u.UsuarioNombre} {u.UsuarioApellido}</p>
-                    <p className="mt-0.5 text-xs text-gray-400">ID: {u.UsuarioId}</p>
-                    <p className="mt-1 text-sm text-gray-500">{u.UsuarioCorreo || "-"}</p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {u.UsuarioIsAdmin === "S" && (
-                        <span className="inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">Admin</span>
-                      )}
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioEstado === "A" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                        {u.UsuarioEstado === "A" ? "Activo" : "Inactivo"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => abrirPerfiles(u)} className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-purple-50 hover:text-purple-600">
-                      <Shield size={16} />
-                    </button>
-                    <button onClick={() => abrirEditar(u)} className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => eliminar.mutate(u.UsuarioId)} className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Nombre</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Apellido</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Correo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Rol</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Estado</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {usuarios.map((u) => (
-                  <tr key={u.UsuarioId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm font-medium text-gray-900">{u.UsuarioId}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{u.UsuarioNombre}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{u.UsuarioApellido || "-"}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{u.UsuarioCorreo || "-"}</td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioIsAdmin === "S" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
-                        {u.UsuarioIsAdmin === "S" ? "Super Usuario" : "Operador"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioEstado === "A" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                        {u.UsuarioEstado === "A" ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => abrirPerfiles(u)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-purple-50 hover:text-purple-600" title="Asignar Perfiles">
-                          <Shield size={15} />
-                        </button>
-                        <button onClick={() => abrirEditar(u)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
-                          <Pencil size={15} />
-                        </button>
-                        <button onClick={() => eliminar.mutate(u.UsuarioId)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={usuarios}
+        isLoading={isLoading}
+        keyExtractor={(u) => u.UsuarioId}
+        emptyIcon={UserCog}
+        emptyText="No hay usuarios para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar por ID, nombre o correo..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "ID", render: (u) => u.UsuarioId, className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
+          { header: "Nombre", render: (u) => u.UsuarioNombre },
+          { header: "Apellido", render: (u) => u.UsuarioApellido || "-" },
+          { header: "Correo", render: (u) => u.UsuarioCorreo || "-" },
+          { header: "Rol", render: (u) => (
+            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioIsAdmin === "S" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
+              {u.UsuarioIsAdmin === "S" ? "Super Usuario" : "Operador"}
+            </span>
+          )},
+          { header: "Estado", render: (u) => (
+            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioEstado === "A" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              {u.UsuarioEstado === "A" ? "Activo" : "Inactivo"}
+            </span>
+          )},
+        ]}
+        mobileCard={(u) => (
+          <>
+            <p className="font-medium text-gray-900">{u.UsuarioNombre} {u.UsuarioApellido}</p>
+            <p className="mt-0.5 text-xs text-gray-400">ID: {u.UsuarioId}</p>
+            <p className="mt-1 text-sm text-gray-500">{u.UsuarioCorreo || "-"}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {u.UsuarioIsAdmin === "S" && (
+                <span className="inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">Admin</span>
+              )}
+              <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioEstado === "A" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                {u.UsuarioEstado === "A" ? "Activo" : "Inactivo"}
+              </span>
+            </div>
+          </>
+        )}
+        actions={(u) => (
+          <>
+            <button onClick={() => abrirPerfiles(u)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-purple-50 hover:text-purple-600" title="Asignar Perfiles">
+              <Shield size={15} />
+            </button>
+            <button onClick={() => abrirEditar(u)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+              <Pencil size={15} />
+            </button>
+            <button onClick={() => { if (confirm("¿Eliminar este usuario?")) eliminar.mutate(u.UsuarioId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      />
 
       {/* Modal */}
       {modal && (
@@ -301,8 +263,8 @@ export default function UsuariosPage() {
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending || actualizar.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending || actualizar.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

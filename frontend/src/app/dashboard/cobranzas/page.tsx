@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useCobranzas, useCrearCobranza, useEliminarCobranza } from "@/hooks/useCobranzas";
-import { useAlumnos } from "@/hooks/useAlumnos";
-import { formatGuaranies } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
+import { formatGuaranies, formatFecha } from "@/lib/format";
+import AlumnoPicker from "@/components/AlumnoPicker";
+import DataTable from "@/components/DataTable";
 import { Plus, Trash2, X, Loader2, Receipt, Search } from "lucide-react";
 
 export default function CobranzasPage() {
+  const { usuario } = useAuth();
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [filtroAlumnoId, setFiltroAlumnoId] = useState<number | undefined>();
@@ -20,24 +23,28 @@ export default function CobranzasPage() {
     CobranzaDiasMora: 0,
     CobranzaExamen: 0,
     CobranzaDescuento: 0,
-    UsuarioId: 0,
     CobranzaNroComprobante: 0,
     CobranzaTimbrado: 0,
     CobranzaFebrero: 0,
     CobranzaAdicionalDetalle: "",
   });
 
-  const { data: cobranzas, isLoading } = useCobranzas({
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = useCobranzas({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
     alumnoId: filtroAlumnoId,
+    busqueda: busqueda || undefined,
+    page,
+    limit: 10,
   });
-  const { data: alumnos } = useAlumnos();
+  const cobranzas = resp?.data;
   const crear = useCrearCobranza();
   const eliminar = useEliminarCobranza();
 
   async function guardar() {
-    await crear.mutateAsync(form);
+    await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
     setModal(false);
   }
 
@@ -51,7 +58,7 @@ export default function CobranzasPage() {
         </div>
         <button
           onClick={() => {
-            setForm({ CobranzaFecha: "", AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, UsuarioId: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: 0, CobranzaAdicionalDetalle: "" });
+            setForm({ CobranzaFecha: "", AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: 0, CobranzaAdicionalDetalle: "" });
             setModal(true);
           }}
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
@@ -82,96 +89,45 @@ export default function CobranzasPage() {
             placeholder="Fecha hasta"
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
-          <select
-            value={filtroAlumnoId ?? ""}
-            onChange={(e) => setFiltroAlumnoId(e.target.value ? Number(e.target.value) : undefined)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          >
-            <option value="">Todos los alumnos</option>
-            {alumnos?.map((a) => (
-              <option key={a.AlumnoId} value={a.AlumnoId}>{a.AlumnoNombre} {a.AlumnoApellido}</option>
-            ))}
-          </select>
+          <AlumnoPicker
+            value={filtroAlumnoId ?? 0}
+            onChange={(id) => setFiltroAlumnoId(id || undefined)}
+          />
         </div>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !cobranzas?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-gray-100 p-3 mb-3">
-            <Receipt className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay cobranzas para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {cobranzas?.map((c) => (
-              <div key={c.CobranzaId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
-                    <p className="mt-1 text-sm text-gray-500">{c.CobranzaFecha} - {c.CobranzaMesPagado}</p>
-                    <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento)}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => eliminar.mutate(c.CobranzaId)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Alumno</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Mes Pagado</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Subtotal</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Dias Mora</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {cobranzas?.map((c) => (
-                  <tr key={c.CobranzaId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{c.CobranzaFecha}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{c.AlumnoNombre} {c.AlumnoApellido}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{c.CobranzaMesPagado}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{formatGuaranies(c.CobranzaSubtotalCuota)}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{c.CobranzaDiasMora}</td>
-                    <td className="px-4 py-3.5 text-sm font-medium text-gray-900">{formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento)}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => eliminar.mutate(c.CobranzaId)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={cobranzas}
+        isLoading={isLoading}
+        keyExtractor={(c) => c.CobranzaId}
+        emptyIcon={Receipt}
+        emptyText="No hay cobranzas para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar por alumno o CI..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "Fecha", render: (c) => formatFecha(c.CobranzaFecha) },
+          { header: "Alumno", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
+          { header: "Mes Pagado", render: (c) => c.CobranzaMesPagado },
+          { header: "Subtotal", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota) },
+          { header: "Dias Mora", render: (c) => c.CobranzaDiasMora },
+          { header: "Total", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
+        ]}
+        mobileCard={(c) => (
+          <>
+            <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
+            <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {c.CobranzaMesPagado}</p>
+            <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento)}</p>
+          </>
+        )}
+        actions={(c) => (
+          <button onClick={() => { if (confirm("¿Eliminar esta cobranza?")) eliminar.mutate(c.CobranzaId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+            <Trash2 size={15} />
+          </button>
+        )}
+      />
 
       {/* Modal */}
       {modal && (
@@ -197,18 +153,12 @@ export default function CobranzasPage() {
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Alumno</label>
-                <select
+                <AlumnoPicker
                   value={form.AlumnoId}
-                  onChange={(e) => setForm({ ...form, AlumnoId: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value={0}>Seleccionar alumno</option>
-                  {alumnos?.map((a) => (
-                    <option key={a.AlumnoId} value={a.AlumnoId}>{a.AlumnoNombre} {a.AlumnoApellido}</option>
-                  ))}
-                </select>
+                  onChange={(id) => setForm({ ...form, AlumnoId: id })}
+                />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes Pagado</label>
@@ -263,15 +213,6 @@ export default function CobranzasPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Usuario ID</label>
-                <input
-                  type="number"
-                  value={form.UsuarioId}
-                  onChange={(e) => setForm({ ...form, UsuarioId: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Nro Comprobante</label>
                 <input
                   type="number"
@@ -311,8 +252,8 @@ export default function CobranzasPage() {
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

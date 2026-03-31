@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { GraduationCap, User, Lock, AlertCircle, Loader2 } from "lucide-react";
@@ -12,6 +12,11 @@ export default function LoginPage() {
   const [contrasena, setContrasena] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const usuarioRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    usuarioRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +57,7 @@ export default function LoginPage() {
             <div className="relative">
               <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
+                ref={usuarioRef}
                 type="text"
                 value={usuarioId}
                 onChange={(e) => setUsuarioId(e.target.value)}

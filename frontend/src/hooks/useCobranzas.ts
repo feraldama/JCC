@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Cobranza {
   CobranzaId: number;
@@ -23,25 +24,16 @@ export interface Cobranza {
   UsuarioApellido?: string;
 }
 
-interface FiltrosCobranzas {
+interface FiltrosCobranzas extends PaginationParams {
   fechaDesde?: string;
   fechaHasta?: string;
   alumnoId?: number;
 }
 
-function buildQuery(filtros: FiltrosCobranzas) {
-  const params = new URLSearchParams();
-  if (filtros.fechaDesde) params.set("fechaDesde", filtros.fechaDesde);
-  if (filtros.fechaHasta) params.set("fechaHasta", filtros.fechaHasta);
-  if (filtros.alumnoId) params.set("alumnoId", String(filtros.alumnoId));
-  const q = params.toString();
-  return q ? `?${q}` : "";
-}
-
 export function useCobranzas(filtros: FiltrosCobranzas = {}) {
-  return useQuery<Cobranza[]>({
+  return useQuery<PaginatedResponse<Cobranza>>({
     queryKey: ["cobranzas", filtros],
-    queryFn: () => api.get(`/cobranzas${buildQuery(filtros)}`),
+    queryFn: () => api.get(`/cobranzas${buildPaginationQuery(filtros)}`),
   });
 }
 

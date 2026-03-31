@@ -10,10 +10,14 @@ import {
   useAsignarMenus,
   type Perfil,
 } from "@/hooks/usePerfiles";
-import { Plus, Pencil, Trash2, X, Loader2, Shield, Settings, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Shield, Settings } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 export default function PerfilesPage() {
-  const { data: perfiles, isLoading } = usePerfiles();
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = usePerfiles({ busqueda: busqueda || undefined, page, limit: 10 });
+  const perfiles = resp?.data;
   const { data: todosMenus } = useMenus();
   const crear = useCrearPerfil();
   const actualizar = useActualizarPerfil();
@@ -89,106 +93,52 @@ export default function PerfilesPage() {
         </button>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !perfiles?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-gray-100 p-3 mb-3">
-            <Shield className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay perfiles para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {perfiles?.map((p) => (
-              <div key={p.PerfilId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{p.PerfilDescripcion}</p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <span className="text-sm text-gray-400">-</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => abrirEditar(p)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => abrirMenus(p)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600"
-                    >
-                      <Settings size={16} />
-                    </button>
-                    <button
-                      onClick={() => eliminar.mutate(p.PerfilId)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Descripcion</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Menus</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {perfiles?.map((p) => (
-                  <tr key={p.PerfilId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{p.PerfilId}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{p.PerfilDescripcion}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="text-sm text-gray-400">-</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => abrirEditar(p)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => abrirMenus(p)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600"
-                        >
-                          <Settings size={15} />
-                        </button>
-                        <button
-                          onClick={() => eliminar.mutate(p.PerfilId)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={perfiles}
+        isLoading={isLoading}
+        keyExtractor={(p) => p.PerfilId}
+        emptyIcon={Shield}
+        emptyText="No hay perfiles para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar perfil..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "ID", render: (p) => p.PerfilId },
+          { header: "Descripcion", render: (p) => p.PerfilDescripcion },
+          { header: "Menus", render: (p) => (
+            <div className="flex flex-wrap gap-1">
+              {p.menus?.length ? p.menus.map((m) => (
+                <span key={m.MenuId} className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{m.MenuNombre}</span>
+              )) : <span className="text-xs text-gray-400">Sin menus</span>}
+            </div>
+          )},
+        ]}
+        mobileCard={(p) => (
+          <>
+            <p className="font-medium text-gray-900">{p.PerfilDescripcion}</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {p.menus?.length ? p.menus.map((m) => (
+                <span key={m.MenuId} className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{m.MenuNombre}</span>
+              )) : <span className="text-xs text-gray-400">Sin menus</span>}
+            </div>
+          </>
+        )}
+        actions={(p) => (
+          <>
+            <button onClick={() => abrirEditar(p)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+              <Pencil size={15} />
+            </button>
+            <button onClick={() => abrirMenus(p)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
+              <Settings size={15} />
+            </button>
+            <button onClick={() => { if (confirm("¿Eliminar este perfil?")) eliminar.mutate(p.PerfilId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      />
 
       {/* Modal Perfil */}
       {modal && (
@@ -218,8 +168,8 @@ export default function PerfilesPage() {
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending || actualizar.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending || actualizar.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

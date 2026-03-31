@@ -10,9 +10,13 @@ import {
 } from "@/hooks/useEmpleados";
 import { formatGuaranies } from "@/lib/format";
 import { Plus, Pencil, Trash2, X, Loader2, Users } from "lucide-react";
+import DataTable from "@/components/DataTable";
 
 export default function EmpleadosPage() {
-  const { data: empleados, isLoading } = useEmpleados();
+  const [page, setPage] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
+  const { data: resp, isLoading } = useEmpleados({ busqueda: busqueda || undefined, page, limit: 10 });
+  const empleados = resp?.data;
   const crear = useCrearEmpleado();
   const actualizar = useActualizarEmpleado();
   const eliminar = useEliminarEmpleado();
@@ -59,91 +63,41 @@ export default function EmpleadosPage() {
         </button>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : !empleados?.length ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-gray-100 p-3 mb-3">
-            <Users className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500">No hay empleados para mostrar</p>
-        </div>
-      ) : (
-        <>
-          {/* Vista mobile - cards */}
-          <div className="space-y-3 md:hidden">
-            {empleados?.map((e) => (
-              <div key={e.EmpleadoId} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{e.EmpleadoNombre} {e.EmpleadoApellido}</p>
-                    <p className="mt-1 text-sm text-gray-500">CI: {e.EmpleadoCI}</p>
-                    <p className="mt-1 text-sm text-gray-500">{formatGuaranies(e.EmpleadoCobroMonto)}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => abrirEditar(e)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => eliminar.mutate(e.EmpleadoId)}
-                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop - tabla */}
-          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">CI</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Nombre</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Apellido</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Monto Cobro</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {empleados?.map((e) => (
-                  <tr key={e.EmpleadoId} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{e.EmpleadoCI}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{e.EmpleadoNombre}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{e.EmpleadoApellido}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-700">{formatGuaranies(e.EmpleadoCobroMonto)}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => abrirEditar(e)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => eliminar.mutate(e.EmpleadoId)}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <DataTable
+        data={empleados}
+        isLoading={isLoading}
+        keyExtractor={(e) => e.EmpleadoId}
+        emptyIcon={Users}
+        emptyText="No hay empleados para mostrar"
+        total={resp?.total}
+        searchPlaceholder="Buscar por nombre, apellido o CI..."
+        onSearch={(q) => { setBusqueda(q); setPage(0); }}
+        page={page}
+        onPageChange={setPage}
+        columns={[
+          { header: "CI", render: (e) => e.EmpleadoCI },
+          { header: "Nombre", render: (e) => e.EmpleadoNombre },
+          { header: "Apellido", render: (e) => e.EmpleadoApellido },
+          { header: "Monto Cobro", render: (e) => formatGuaranies(e.EmpleadoCobroMonto) },
+        ]}
+        mobileCard={(e) => (
+          <>
+            <p className="font-medium text-gray-900">{e.EmpleadoNombre} {e.EmpleadoApellido}</p>
+            <p className="mt-1 text-sm text-gray-500">CI: {e.EmpleadoCI}</p>
+            <p className="mt-1 text-sm text-gray-500">{formatGuaranies(e.EmpleadoCobroMonto)}</p>
+          </>
+        )}
+        actions={(e) => (
+          <>
+            <button onClick={() => abrirEditar(e)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+              <Pencil size={15} />
+            </button>
+            <button onClick={() => { if (confirm("¿Eliminar este empleado?")) eliminar.mutate(e.EmpleadoId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
+      />
 
       {/* Modal */}
       {modal && (
@@ -198,8 +152,8 @@ export default function EmpleadosPage() {
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar
               </button>
-              <button onClick={guardar} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
-                Guardar
+              <button onClick={guardar} disabled={crear.isPending || actualizar.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                {crear.isPending || actualizar.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
               </button>
             </div>
           </div>

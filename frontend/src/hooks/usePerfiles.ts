@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Perfil {
   PerfilId: number;
@@ -12,10 +13,10 @@ export interface Menu {
   MenuNombre: string;
 }
 
-export function usePerfiles() {
-  return useQuery<Perfil[]>({
-    queryKey: ["perfiles"],
-    queryFn: () => api.get("/perfiles"),
+export function usePerfiles(filtros: PaginationParams = {}) {
+  return useQuery<PaginatedResponse<Perfil>>({
+    queryKey: ["perfiles", filtros],
+    queryFn: () => api.get(`/perfiles${buildPaginationQuery(filtros)}`),
   });
 }
 

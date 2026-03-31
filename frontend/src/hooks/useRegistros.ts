@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Registro {
   RegistroId: number;
@@ -25,27 +26,17 @@ export interface Registro {
   AlumnoCI?: string;
 }
 
-interface FiltrosRegistros {
+interface FiltrosRegistros extends PaginationParams {
   fechaDesde?: string;
   fechaHasta?: string;
   tipo?: string;
   alumnoId?: number;
 }
 
-function buildQuery(filtros: FiltrosRegistros) {
-  const params = new URLSearchParams();
-  if (filtros.fechaDesde) params.set("fechaDesde", filtros.fechaDesde);
-  if (filtros.fechaHasta) params.set("fechaHasta", filtros.fechaHasta);
-  if (filtros.tipo) params.set("tipo", filtros.tipo);
-  if (filtros.alumnoId) params.set("alumnoId", String(filtros.alumnoId));
-  const q = params.toString();
-  return q ? `?${q}` : "";
-}
-
 export function useRegistros(filtros: FiltrosRegistros = {}) {
-  return useQuery<Registro[]>({
+  return useQuery<PaginatedResponse<Registro>>({
     queryKey: ["registros", filtros],
-    queryFn: () => api.get(`/registros${buildQuery(filtros)}`),
+    queryFn: () => api.get(`/registros${buildPaginationQuery(filtros)}`),
   });
 }
 

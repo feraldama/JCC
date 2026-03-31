@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Curso {
   CursoId: number;
@@ -7,10 +8,10 @@ export interface Curso {
   CursoImporte: number;
 }
 
-export function useCursos() {
-  return useQuery<Curso[]>({
-    queryKey: ["cursos"],
-    queryFn: () => api.get("/cursos"),
+export function useCursos(filtros: PaginationParams = {}) {
+  return useQuery<PaginatedResponse<Curso>>({
+    queryKey: ["cursos", filtros],
+    queryFn: () => api.get(`/cursos${buildPaginationQuery(filtros)}`),
   });
 }
 

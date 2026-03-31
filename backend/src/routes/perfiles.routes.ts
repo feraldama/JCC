@@ -4,9 +4,28 @@ import { pool } from "../config/db";
 const router = Router();
 
 // GET / - listar perfiles
-router.get("/", async (_req: Request, res: Response) => {
-  const result = await pool.query('SELECT * FROM perfil ORDER BY "PerfilId"');
-  res.json(result.rows);
+router.get("/", async (req: Request, res: Response) => {
+  const { busqueda, page, limit } = req.query;
+  let where = "WHERE 1=1";
+  const params: any[] = [];
+  let i = 1;
+
+  if (busqueda) {
+    where += ` AND "PerfilDescripcion" ILIKE $${i}`;
+    params.push(`%${busqueda}%`);
+    i++;
+  }
+
+  const countResult = await pool.query(`SELECT COUNT(*)::int AS total FROM perfil ${where}`, params);
+
+  const pageNum = Math.max(0, Number(page) || 0);
+  const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+  const dataParams = [...params, pageSize, pageNum * pageSize];
+  const result = await pool.query(
+    `SELECT * FROM perfil ${where} ORDER BY "PerfilId" LIMIT $${i} OFFSET $${i + 1}`,
+    dataParams
+  );
+  res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
 // GET /:id - obtener perfil con sus menus asignados

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Usuario {
   UsuarioId: string;
@@ -10,10 +11,10 @@ export interface Usuario {
   UsuarioEstado: string;
 }
 
-export function useUsuarios() {
-  return useQuery<Usuario[]>({
-    queryKey: ["usuarios"],
-    queryFn: () => api.get("/usuarios"),
+export function useUsuarios(filtros: PaginationParams = {}) {
+  return useQuery<PaginatedResponse<Usuario>>({
+    queryKey: ["usuarios", filtros],
+    queryFn: () => api.get(`/usuarios${buildPaginationQuery(filtros)}`),
   });
 }
 

@@ -5,35 +5,43 @@ const router = Router();
 
 // GET / - listar alumnos con JOIN a curso
 router.get("/", async (req: Request, res: Response) => {
-  const { nombre, ci, cursoId } = req.query;
-  let query = `
-    SELECT a.*, c."CursoNombre"
-    FROM alumno a
-    JOIN curso c ON a."CursoId" = c."CursoId"
-    WHERE 1=1
-  `;
+  const { nombre, ci, cursoId, busqueda, page, limit } = req.query;
+  let where = "WHERE 1=1";
   const params: any[] = [];
-  let paramIndex = 1;
+  let i = 1;
 
+  if (busqueda) {
+    where += ` AND (a."AlumnoNombre" ILIKE $${i} OR a."AlumnoApellido" ILIKE $${i} OR a."AlumnoCI" ILIKE $${i})`;
+    params.push(`%${busqueda}%`);
+    i++;
+  }
   if (nombre) {
-    query += ` AND (a."AlumnoNombre" ILIKE $${paramIndex} OR a."AlumnoApellido" ILIKE $${paramIndex})`;
+    where += ` AND (a."AlumnoNombre" ILIKE $${i} OR a."AlumnoApellido" ILIKE $${i})`;
     params.push(`%${nombre}%`);
-    paramIndex++;
+    i++;
   }
   if (ci) {
-    query += ` AND a."AlumnoCI" ILIKE $${paramIndex}`;
+    where += ` AND a."AlumnoCI" ILIKE $${i}`;
     params.push(`%${ci}%`);
-    paramIndex++;
+    i++;
   }
   if (cursoId) {
-    query += ` AND a."CursoId" = $${paramIndex}`;
+    where += ` AND a."CursoId" = $${i}`;
     params.push(cursoId);
-    paramIndex++;
+    i++;
   }
 
-  query += ' ORDER BY a."AlumnoId"';
-  const result = await pool.query(query, params);
-  res.json(result.rows);
+  const baseFrom = `FROM alumno a JOIN curso c ON a."CursoId" = c."CursoId" ${where}`;
+  const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${baseFrom}`, params);
+
+  const pageNum = Math.max(0, Number(page) || 0);
+  const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+  const dataParams = [...params, pageSize, pageNum * pageSize];
+  const result = await pool.query(
+    `SELECT a.*, c."CursoNombre" ${baseFrom} ORDER BY a."AlumnoApellido", a."AlumnoNombre" LIMIT $${i} OFFSET $${i + 1}`,
+    dataParams
+  );
+  res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
 // GET /:id - obtener alumno por id con datos del curso

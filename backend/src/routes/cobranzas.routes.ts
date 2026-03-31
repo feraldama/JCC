@@ -5,37 +5,43 @@ const router = Router();
 
 // GET / - listar cobranzas con JOIN a alumno y usuario
 router.get("/", async (req: Request, res: Response) => {
-  const { fechaDesde, fechaHasta, alumnoId } = req.query;
-  let query = `
-    SELECT co.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI",
-           u."UsuarioNombre", u."UsuarioApellido"
-    FROM cobranza co
-    JOIN alumno a ON co."AlumnoId" = a."AlumnoId"
-    JOIN usuario u ON co."UsuarioId" = u."UsuarioId"
-    WHERE 1=1
-  `;
+  const { fechaDesde, fechaHasta, alumnoId, busqueda, page, limit } = req.query;
+  let where = "WHERE 1=1";
   const params: any[] = [];
-  let paramIndex = 1;
+  let i = 1;
 
+  if (busqueda) {
+    where += ` AND (a."AlumnoNombre" ILIKE $${i} OR a."AlumnoApellido" ILIKE $${i} OR a."AlumnoCI" ILIKE $${i})`;
+    params.push(`%${busqueda}%`);
+    i++;
+  }
   if (fechaDesde) {
-    query += ` AND co."CobranzaFecha" >= $${paramIndex}`;
+    where += ` AND co."CobranzaFecha" >= $${i}`;
     params.push(fechaDesde);
-    paramIndex++;
+    i++;
   }
   if (fechaHasta) {
-    query += ` AND co."CobranzaFecha" <= $${paramIndex}`;
+    where += ` AND co."CobranzaFecha" <= $${i}`;
     params.push(fechaHasta);
-    paramIndex++;
+    i++;
   }
   if (alumnoId) {
-    query += ` AND co."AlumnoId" = $${paramIndex}`;
+    where += ` AND co."AlumnoId" = $${i}`;
     params.push(alumnoId);
-    paramIndex++;
+    i++;
   }
 
-  query += ' ORDER BY co."CobranzaId" DESC';
-  const result = await pool.query(query, params);
-  res.json(result.rows);
+  const baseFrom = `FROM cobranza co JOIN alumno a ON co."AlumnoId" = a."AlumnoId" JOIN usuario u ON co."UsuarioId" = u."UsuarioId" ${where}`;
+  const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${baseFrom}`, params);
+
+  const pageNum = Math.max(0, Number(page) || 0);
+  const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+  const dataParams = [...params, pageSize, pageNum * pageSize];
+  const result = await pool.query(
+    `SELECT co.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ORDER BY co."CobranzaId" DESC LIMIT $${i} OFFSET $${i + 1}`,
+    dataParams
+  );
+  res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
 // GET /:id - obtener cobranza por id

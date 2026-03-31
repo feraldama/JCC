@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/auth";
 import { useDashboard } from "@/hooks/useDashboard";
-import { formatGuaranies } from "@/lib/format";
+import { formatGuaranies, formatFecha } from "@/lib/format";
 import {
   GraduationCap,
   Receipt,
@@ -21,22 +21,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
-
-const PIE_COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-];
 
 const MESES: Record<string, string> = {
   "01": "Ene",
@@ -161,10 +146,9 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Charts row */}
-      <div className="mb-6 grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-        {/* Cobranzas por mes - Bar chart */}
-        <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-2 md:p-6">
+      {/* Cobranzas por mes */}
+      <div className="mb-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm md:p-6">
           <h2 className="mb-4 text-base font-semibold text-gray-900">
             Cobranzas por Mes
           </h2>
@@ -207,8 +191,10 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
+      </div>
 
-        {/* Alumnos por curso - Pie chart */}
+      {/* Alumnos por curso */}
+      <div className="mb-6">
         <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm md:p-6">
           <h2 className="mb-4 text-base font-semibold text-gray-900">
             Alumnos por Curso
@@ -218,29 +204,28 @@ export default function DashboardPage() {
               <Loader2 className="h-8 w-8 animate-spin text-gray-300" />
             </div>
           ) : stats && stats.alumnosPorCurso.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={stats.alumnosPorCurso}
-                  dataKey="cantidad"
-                  nameKey="nombre"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ name, value }) =>
-                    `${name}: ${value}`
-                  }
-                >
-                  {stats.alumnosPorCurso.map((_entry, index) => (
-                    <Cell
-                      key={index}
-                      fill={PIE_COLORS[index % PIE_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
+            <ResponsiveContainer
+              width="100%"
+              height={Math.max(280, stats.alumnosPorCurso.length * 28)}
+            >
+              <BarChart
+                data={stats.alumnosPorCurso}
+                layout="vertical"
+                margin={{ left: 10, right: 20, top: 5, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} />
+                <YAxis
+                  type="category"
+                  dataKey="nombre"
+                  tick={{ fontSize: 11 }}
+                  width={140}
+                />
+                <Tooltip
+                  formatter={(value) => [value, "Alumnos"]}
+                />
+                <Bar dataKey="cantidad" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <p className="flex h-64 items-center justify-center text-sm text-gray-400">
@@ -273,7 +258,7 @@ export default function DashboardPage() {
                       {c.AlumnoNombre} {c.AlumnoApellido}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {new Date(c.CobranzaFecha).toLocaleDateString("es-ES")} — Mes:{" "}
+                      {formatFecha(c.CobranzaFecha)} — Mes:{" "}
                       {c.CobranzaMesPagado}
                     </p>
                   </div>
@@ -313,7 +298,7 @@ export default function DashboardPage() {
                     </p>
                     <p className="text-xs text-gray-400">
                       CI: {m.AlumnoCI} —{" "}
-                      {new Date(m.CobranzaFecha).toLocaleDateString("es-ES")}
+                      {formatFecha(m.CobranzaFecha)}
                     </p>
                   </div>
                   <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">

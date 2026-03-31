@@ -5,37 +5,43 @@ const router = Router();
 
 // GET / - listar pagos con JOIN a empleado y usuario
 router.get("/", async (req: Request, res: Response) => {
-  const { fechaDesde, fechaHasta, empleadoId } = req.query;
-  let query = `
-    SELECT p.*, e."EmpleadoNombre", e."EmpleadoApellido", e."EmpleadoCI",
-           u."UsuarioNombre", u."UsuarioApellido"
-    FROM pagoempleado p
-    JOIN empleado e ON p."EmpleadoId" = e."EmpleadoId"
-    JOIN usuario u ON p."UsuarioId" = u."UsuarioId"
-    WHERE 1=1
-  `;
+  const { fechaDesde, fechaHasta, empleadoId, busqueda, page, limit } = req.query;
+  let where = "WHERE 1=1";
   const params: any[] = [];
-  let paramIndex = 1;
+  let i = 1;
 
+  if (busqueda) {
+    where += ` AND (e."EmpleadoNombre" ILIKE $${i} OR e."EmpleadoApellido" ILIKE $${i} OR e."EmpleadoCI" ILIKE $${i})`;
+    params.push(`%${busqueda}%`);
+    i++;
+  }
   if (fechaDesde) {
-    query += ` AND p."PagoEmpleadoFecha" >= $${paramIndex}`;
+    where += ` AND p."PagoEmpleadoFecha" >= $${i}`;
     params.push(fechaDesde);
-    paramIndex++;
+    i++;
   }
   if (fechaHasta) {
-    query += ` AND p."PagoEmpleadoFecha" <= $${paramIndex}`;
+    where += ` AND p."PagoEmpleadoFecha" <= $${i}`;
     params.push(fechaHasta);
-    paramIndex++;
+    i++;
   }
   if (empleadoId) {
-    query += ` AND p."EmpleadoId" = $${paramIndex}`;
+    where += ` AND p."EmpleadoId" = $${i}`;
     params.push(empleadoId);
-    paramIndex++;
+    i++;
   }
 
-  query += ' ORDER BY p."PagoEmpleadoId" DESC';
-  const result = await pool.query(query, params);
-  res.json(result.rows);
+  const baseFrom = `FROM pagoempleado p JOIN empleado e ON p."EmpleadoId" = e."EmpleadoId" JOIN usuario u ON p."UsuarioId" = u."UsuarioId" ${where}`;
+  const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${baseFrom}`, params);
+
+  const pageNum = Math.max(0, Number(page) || 0);
+  const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+  const dataParams = [...params, pageSize, pageNum * pageSize];
+  const result = await pool.query(
+    `SELECT p.*, e."EmpleadoNombre", e."EmpleadoApellido", e."EmpleadoCI", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ORDER BY p."PagoEmpleadoId" DESC LIMIT $${i} OFFSET $${i + 1}`,
+    dataParams
+  );
+  res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
 // GET /:id - obtener pago por id

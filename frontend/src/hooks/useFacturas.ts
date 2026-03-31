@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildPaginationQuery, type PaginatedResponse, type PaginationParams } from "@/lib/types";
 
 export interface Factura {
   FacturaId: number;
@@ -8,10 +9,10 @@ export interface Factura {
   FacturaHasta: number;
 }
 
-export function useFacturas() {
-  return useQuery<Factura[]>({
-    queryKey: ["facturas"],
-    queryFn: () => api.get("/facturas"),
+export function useFacturas(filtros: PaginationParams = {}) {
+  return useQuery<PaginatedResponse<Factura>>({
+    queryKey: ["facturas", filtros],
+    queryFn: () => api.get(`/facturas${buildPaginationQuery(filtros)}`),
   });
 }
 
