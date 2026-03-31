@@ -15,6 +15,7 @@ import registrosRoutes from "./routes/registros.routes";
 import usuariosRoutes from "./routes/usuarios.routes";
 import perfilesRoutes from "./routes/perfiles.routes";
 import menusRoutes from "./routes/menus.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use("/api/registros", authMiddleware, registrosRoutes);
 app.use("/api/usuarios", authMiddleware, usuariosRoutes);
 app.use("/api/perfiles", authMiddleware, perfilesRoutes);
 app.use("/api/menus", authMiddleware, menusRoutes);
+app.use("/api/dashboard", authMiddleware, dashboardRoutes);
 
 // Error handler global
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
