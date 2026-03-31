@@ -15,8 +15,11 @@ import DataTable from "@/components/DataTable";
 
 export default function PerfilesPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const { data: resp, isLoading } = usePerfiles({ busqueda: busqueda || undefined, page, limit: 10 });
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { data: resp, isLoading } = usePerfiles({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const perfiles = resp?.data;
   const { data: todosMenus } = useMenus();
   const crear = useCrearPerfil();
@@ -103,10 +106,19 @@ export default function PerfilesPage() {
         searchPlaceholder="Buscar perfil..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
           { header: "ID", render: (p) => p.PerfilId },
-          { header: "Descripcion", render: (p) => p.PerfilDescripcion },
+          { header: "Descripcion", sortKey: "PerfilDescripcion", render: (p) => p.PerfilDescripcion },
           { header: "Menus", render: (p) => (
             <div className="flex flex-wrap gap-1">
               {p.menus?.length ? p.menus.map((m) => (

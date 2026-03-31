@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { pool } from "../config/db";
+import { buildOrderBy } from "../utils/sorting";
 
 const router = Router();
 
@@ -37,8 +38,14 @@ router.get("/", async (req: Request, res: Response) => {
   const pageNum = Math.max(0, Number(page) || 0);
   const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
   const dataParams = [...params, pageSize, pageNum * pageSize];
+  const orderBy = buildOrderBy(req, {
+    PagoEmpleadoFecha: 'p."PagoEmpleadoFecha"',
+    EmpleadoApellido: 'e."EmpleadoApellido"',
+    PagoEmpleadoEntregaMonto: 'p."PagoEmpleadoEntregaMonto"',
+    PagoEmpleadoSaldoMonto: 'p."PagoEmpleadoSaldoMonto"',
+  }, 'p."PagoEmpleadoId" DESC');
   const result = await pool.query(
-    `SELECT p.*, e."EmpleadoNombre", e."EmpleadoApellido", e."EmpleadoCI", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ORDER BY p."PagoEmpleadoId" DESC LIMIT $${i} OFFSET $${i + 1}`,
+    `SELECT p.*, e."EmpleadoNombre", e."EmpleadoApellido", e."EmpleadoCI", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
     dataParams
   );
   res.json({ data: result.rows, total: countResult.rows[0].total });

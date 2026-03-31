@@ -16,8 +16,11 @@ import DataTable from "@/components/DataTable";
 
 export default function UsuariosPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const { data: resp, isLoading } = useUsuarios({ busqueda: busqueda || undefined, page, limit: 10 });
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { data: resp, isLoading } = useUsuarios({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const usuarios = resp?.data;
   const crear = useCrearUsuario();
   const actualizar = useActualizarUsuario();
@@ -129,12 +132,21 @@ export default function UsuariosPage() {
         searchPlaceholder="Buscar por ID, nombre o correo..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "ID", render: (u) => u.UsuarioId, className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
-          { header: "Nombre", render: (u) => u.UsuarioNombre },
-          { header: "Apellido", render: (u) => u.UsuarioApellido || "-" },
-          { header: "Correo", render: (u) => u.UsuarioCorreo || "-" },
+          { header: "ID", sortKey: "UsuarioId", render: (u) => u.UsuarioId, className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
+          { header: "Nombre", sortKey: "UsuarioNombre", render: (u) => u.UsuarioNombre },
+          { header: "Apellido", sortKey: "UsuarioApellido", render: (u) => u.UsuarioApellido || "-" },
+          { header: "Correo", sortKey: "UsuarioCorreo", render: (u) => u.UsuarioCorreo || "-" },
           { header: "Rol", render: (u) => (
             <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${u.UsuarioIsAdmin === "S" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
               {u.UsuarioIsAdmin === "S" ? "Super Usuario" : "Operador"}

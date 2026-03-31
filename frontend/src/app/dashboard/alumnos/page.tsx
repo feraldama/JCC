@@ -27,14 +27,19 @@ export default function AlumnosPage() {
   });
 
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = useAlumnos({
     nombre: filtroNombre || undefined,
     ci: filtroCI || undefined,
     cursoId: filtroCursoId,
     busqueda: busqueda || undefined,
     page,
-    limit: 10,
+    limit: pageSize,
+    sortBy,
+    sortDir: sortBy ? sortDir : undefined,
   });
   const alumnos = resp?.data;
   const { data: cursosResp } = useCursos();
@@ -130,13 +135,22 @@ export default function AlumnosPage() {
         searchPlaceholder="Buscar por nombre, apellido o CI..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
           { header: "Codigo", render: (a) => a.AlumnoCodigoIdentificador },
-          { header: "CI", render: (a) => a.AlumnoCI },
-          { header: "Nombre", render: (a) => a.AlumnoNombre },
-          { header: "Apellido", render: (a) => a.AlumnoApellido },
-          { header: "Curso", render: (a) => a.CursoNombre },
+          { header: "CI", sortKey: "AlumnoCI", render: (a) => a.AlumnoCI },
+          { header: "Nombre", sortKey: "AlumnoNombre", render: (a) => a.AlumnoNombre },
+          { header: "Apellido", sortKey: "AlumnoApellido", render: (a) => a.AlumnoApellido },
+          { header: "Curso", sortKey: "CursoNombre", render: (a) => a.CursoNombre },
         ]}
         mobileCard={(a) => (
           <>

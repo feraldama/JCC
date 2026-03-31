@@ -42,7 +42,10 @@ export default function RegistrosPage() {
   });
 
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = useRegistros({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
@@ -50,7 +53,9 @@ export default function RegistrosPage() {
     alumnoId: filtroAlumnoId,
     busqueda: busqueda || undefined,
     page,
-    limit: 10,
+    limit: pageSize,
+    sortBy,
+    sortDir: sortBy ? sortDir : undefined,
   });
   const registros = resp?.data;
   const crear = useCrearRegistro();
@@ -174,15 +179,24 @@ export default function RegistrosPage() {
         searchPlaceholder="Buscar por comprobante o alumno..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "Fecha", render: (r) => formatFecha(r.RegistroFecha) },
-          { header: "Tipo", render: (r) => r.RegistroTipoRegistro },
-          { header: "Nro Comprobante", render: (r) => r.RegistroNroComprobante },
+          { header: "Fecha", sortKey: "RegistroFecha", render: (r) => formatFecha(r.RegistroFecha) },
+          { header: "Tipo", sortKey: "RegistroTipoRegistro", render: (r) => r.RegistroTipoRegistro },
+          { header: "Nro Comprobante", sortKey: "RegistroNroComprobante", render: (r) => r.RegistroNroComprobante },
           { header: "IVA 10%", render: (r) => formatGuaranies(r.RegistroIva10) },
           { header: "IVA 5%", render: (r) => formatGuaranies(r.RegistroIva5) },
-          { header: "Total", render: (r) => formatGuaranies(r.RegistroTotal) },
-          { header: "Alumno", render: (r) => r.AlumnoNombre ? `${r.AlumnoNombre} ${r.AlumnoApellido}` : "-" },
+          { header: "Total", sortKey: "RegistroTotal", render: (r) => formatGuaranies(r.RegistroTotal) },
+          { header: "Alumno", sortKey: "AlumnoApellido", render: (r) => r.AlumnoNombre ? `${r.AlumnoNombre} ${r.AlumnoApellido}` : "-" },
         ]}
         mobileCard={(r) => (
           <>

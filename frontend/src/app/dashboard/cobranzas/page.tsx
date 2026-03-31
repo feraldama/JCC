@@ -30,14 +30,19 @@ export default function CobranzasPage() {
   });
 
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = useCobranzas({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
     alumnoId: filtroAlumnoId,
     busqueda: busqueda || undefined,
     page,
-    limit: 10,
+    limit: pageSize,
+    sortBy,
+    sortDir: sortBy ? sortDir : undefined,
   });
   const cobranzas = resp?.data;
   const crear = useCrearCobranza();
@@ -106,12 +111,21 @@ export default function CobranzasPage() {
         searchPlaceholder="Buscar por alumno o CI..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "Fecha", render: (c) => formatFecha(c.CobranzaFecha) },
-          { header: "Alumno", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
-          { header: "Mes Pagado", render: (c) => c.CobranzaMesPagado },
-          { header: "Subtotal", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota) },
+          { header: "Fecha", sortKey: "CobranzaFecha", render: (c) => formatFecha(c.CobranzaFecha) },
+          { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
+          { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
+          { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota) },
           { header: "Dias Mora", render: (c) => c.CobranzaDiasMora },
           { header: "Total", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
         ]}

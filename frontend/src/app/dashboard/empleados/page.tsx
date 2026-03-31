@@ -14,8 +14,11 @@ import DataTable from "@/components/DataTable";
 
 export default function EmpleadosPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const { data: resp, isLoading } = useEmpleados({ busqueda: busqueda || undefined, page, limit: 10 });
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { data: resp, isLoading } = useEmpleados({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const empleados = resp?.data;
   const crear = useCrearEmpleado();
   const actualizar = useActualizarEmpleado();
@@ -73,12 +76,21 @@ export default function EmpleadosPage() {
         searchPlaceholder="Buscar por nombre, apellido o CI..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "CI", render: (e) => e.EmpleadoCI },
-          { header: "Nombre", render: (e) => e.EmpleadoNombre },
-          { header: "Apellido", render: (e) => e.EmpleadoApellido },
-          { header: "Monto Cobro", render: (e) => formatGuaranies(e.EmpleadoCobroMonto) },
+          { header: "CI", sortKey: "EmpleadoCI", render: (e) => e.EmpleadoCI },
+          { header: "Nombre", sortKey: "EmpleadoNombre", render: (e) => e.EmpleadoNombre },
+          { header: "Apellido", sortKey: "EmpleadoApellido", render: (e) => e.EmpleadoApellido },
+          { header: "Monto Cobro", sortKey: "EmpleadoCobroMonto", render: (e) => formatGuaranies(e.EmpleadoCobroMonto) },
         ]}
         mobileCard={(e) => (
           <>

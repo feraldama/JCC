@@ -14,8 +14,11 @@ import { Plus, Pencil, Trash2, X, Loader2, BookOpen } from "lucide-react";
 
 export default function CursosPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const { data: resp, isLoading } = useCursos({ busqueda: busqueda || undefined, page, limit: 10 });
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { data: resp, isLoading } = useCursos({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const cursos = resp?.data;
   const crear = useCrearCurso();
   const actualizar = useActualizarCurso();
@@ -73,10 +76,19 @@ export default function CursosPage() {
         searchPlaceholder="Buscar curso..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "Nombre", render: (c) => c.CursoNombre },
-          { header: "Importe", render: (c) => formatGuaranies(c.CursoImporte) },
+          { header: "Nombre", sortKey: "CursoNombre", render: (c) => c.CursoNombre },
+          { header: "Importe", sortKey: "CursoImporte", render: (c) => formatGuaranies(c.CursoImporte) },
         ]}
         mobileCard={(c) => (
           <>

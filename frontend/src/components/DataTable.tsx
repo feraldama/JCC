@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -9,6 +9,7 @@ export interface Column<T> {
   header: string;
   render: (item: T) => ReactNode;
   className?: string;
+  sortKey?: string;
 }
 
 interface DataTableProps<T> {
@@ -28,6 +29,11 @@ interface DataTableProps<T> {
   page?: number;
   pageSize?: number;
   onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  // Server-side sorting
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  onSort?: (sortKey: string) => void;
 }
 
 export default function DataTable<T>({
@@ -45,6 +51,10 @@ export default function DataTable<T>({
   page = 0,
   pageSize = 10,
   onPageChange,
+  onPageSizeChange,
+  sortBy,
+  sortDir,
+  onSort,
 }: DataTableProps<T>) {
   const [searchInput, setSearchInput] = useState("");
 
@@ -58,7 +68,7 @@ export default function DataTable<T>({
   const showSearch = !!onSearch;
   const totalItems = total ?? data?.length ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const showPagination = !!onPageChange && totalItems > pageSize;
+  const showPagination = !!onPageChange;
 
   if (isLoading) {
     return (
@@ -132,8 +142,19 @@ export default function DataTable<T>({
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
                   {columns.map((col) => (
-                    <th key={col.header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      {col.header}
+                    <th
+                      key={col.header}
+                      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500${col.sortKey && onSort ? " cursor-pointer select-none hover:text-gray-700" : ""}`}
+                      onClick={col.sortKey && onSort ? () => onSort(col.sortKey!) : undefined}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {col.header}
+                        {col.sortKey && onSort && (
+                          sortBy === col.sortKey
+                            ? sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                            : <ArrowUpDown size={14} className="text-gray-300" />
+                        )}
+                      </span>
                     </th>
                   ))}
                   {actions && (
@@ -164,15 +185,40 @@ export default function DataTable<T>({
 
           {/* Pagination */}
           {showPagination && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                {page * pageSize + 1}-{Math.min((page + 1) * pageSize, totalItems)} de {totalItems}
-              </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-gray-500">
+                  {totalItems > 0 ? `${page * pageSize + 1}-${Math.min((page + 1) * pageSize, totalItems)} de ${totalItems}` : `0 de ${totalItems}`}
+                </p>
+                {onPageSizeChange && (
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-sm text-gray-500">Filas:</label>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => { onPageSizeChange(Number(e.target.value)); onPageChange!(0); }}
+                      className="rounded-lg border border-gray-200 bg-white py-1 pl-2 pr-7 text-sm text-gray-600 transition-colors hover:bg-gray-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    >
+                      {[10, 20, 50, 100].map((size) => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onPageChange!(0)}
+                  disabled={page === 0}
+                  className="rounded-lg border border-gray-200 bg-white p-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  title="Primera pagina"
+                >
+                  <ChevronsLeft size={16} />
+                </button>
                 <button
                   onClick={() => onPageChange!(page - 1)}
                   disabled={page === 0}
                   className="rounded-lg border border-gray-200 bg-white p-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  title="Pagina anterior"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -198,8 +244,17 @@ export default function DataTable<T>({
                   onClick={() => onPageChange!(page + 1)}
                   disabled={page >= totalPages - 1}
                   className="rounded-lg border border-gray-200 bg-white p-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  title="Pagina siguiente"
                 >
                   <ChevronRight size={16} />
+                </button>
+                <button
+                  onClick={() => onPageChange!(totalPages - 1)}
+                  disabled={page >= totalPages - 1}
+                  className="rounded-lg border border-gray-200 bg-white p-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  title="Ultima pagina"
+                >
+                  <ChevronsRight size={16} />
                 </button>
               </div>
             </div>

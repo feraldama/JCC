@@ -7,6 +7,8 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   busqueda?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

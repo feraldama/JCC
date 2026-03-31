@@ -13,8 +13,11 @@ import DataTable from "@/components/DataTable";
 
 export default function FacturasPage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const { data: resp, isLoading } = useFacturas({ busqueda: busqueda || undefined, page, limit: 10 });
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { data: resp, isLoading } = useFacturas({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const facturas = resp?.data;
   const crear = useCrearFactura();
   const actualizar = useActualizarFactura();
@@ -72,11 +75,20 @@ export default function FacturasPage() {
         searchPlaceholder="Buscar por timbrado..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "Timbrado", render: (f) => f.FacturaTimbrado },
-          { header: "Desde", render: (f) => f.FacturaDesde },
-          { header: "Hasta", render: (f) => f.FacturaHasta },
+          { header: "Timbrado", sortKey: "FacturaTimbrado", render: (f) => f.FacturaTimbrado },
+          { header: "Desde", sortKey: "FacturaDesde", render: (f) => f.FacturaDesde },
+          { header: "Hasta", sortKey: "FacturaHasta", render: (f) => f.FacturaHasta },
         ]}
         mobileCard={(f) => (
           <>

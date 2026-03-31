@@ -23,14 +23,19 @@ export default function PagosPage() {
   });
 
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
+  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = usePagos({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
     empleadoId: filtroEmpleadoId,
     busqueda: busqueda || undefined,
     page,
-    limit: 10,
+    limit: pageSize,
+    sortBy,
+    sortDir: sortBy ? sortDir : undefined,
   });
   const pagos = resp?.data;
   const { data: empleadosResp } = useEmpleados();
@@ -102,11 +107,20 @@ export default function PagosPage() {
         searchPlaceholder="Buscar por empleado o CI..."
         onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
+        pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={(key) => {
+          if (sortBy === key) { if (sortDir === "asc") setSortDir("desc"); else { setSortBy(undefined); } }
+          else { setSortBy(key); setSortDir("asc"); }
+          setPage(0);
+        }}
         columns={[
-          { header: "Fecha", render: (p) => formatFecha(p.PagoEmpleadoFecha) },
-          { header: "Empleado", render: (p) => `${p.EmpleadoNombre} ${p.EmpleadoApellido}` },
-          { header: "Monto", render: (p) => formatGuaranies(p.PagoEmpleadoEntregaMonto) },
+          { header: "Fecha", sortKey: "PagoEmpleadoFecha", render: (p) => formatFecha(p.PagoEmpleadoFecha) },
+          { header: "Empleado", sortKey: "EmpleadoApellido", render: (p) => `${p.EmpleadoNombre} ${p.EmpleadoApellido}` },
+          { header: "Monto", sortKey: "PagoEmpleadoEntregaMonto", render: (p) => formatGuaranies(p.PagoEmpleadoEntregaMonto) },
         ]}
         mobileCard={(p) => (
           <>
