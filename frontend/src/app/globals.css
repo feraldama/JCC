@@ -13,10 +13,11 @@ body {
 button,
 a,
 select,
+label,
 [role="button"],
+[onclick],
 input[type="checkbox"],
 input[type="radio"],
-label[for],
 summary {
   cursor: pointer;
 }

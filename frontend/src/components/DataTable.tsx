@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2, Search, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -57,13 +57,15 @@ export default function DataTable<T>({
   onSort,
 }: DataTableProps<T>) {
   const [searchInput, setSearchInput] = useState("");
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
 
   // Debounce search
   useEffect(() => {
-    if (!onSearch) return;
-    const t = setTimeout(() => onSearch(searchInput), 300);
+    if (!onSearchRef.current) return;
+    const t = setTimeout(() => onSearchRef.current!(searchInput), 300);
     return () => clearTimeout(t);
-  }, [searchInput, onSearch]);
+  }, [searchInput]);
 
   const showSearch = !!onSearch;
   const totalItems = total ?? data?.length ?? 0;

@@ -2,6 +2,9 @@
 
 ## Convenciones del Frontend
 
+### Cursor en elementos clickeables
+Todos los elementos interactivos (botones, links, selects, elementos con `onClick`) deben tener la clase `cursor-pointer` de Tailwind.
+
 ### Diseño responsive
 Todos los componentes deben ser responsive (mobile-first). Usar las clases responsive de Tailwind (`sm:`, `md:`, `lg:`) para adaptar el layout. El `DataTable` ya maneja esto con cards en mobile y tabla en desktop. Los modales usan bottom-sheet en mobile y centrado en desktop. Los grids de formularios usan `grid-cols-1 sm:grid-cols-2`.
 
