@@ -7,8 +7,9 @@ import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/for
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
 import type { Alumno } from "@/hooks/useAlumnos";
-import { Plus, Trash2, X, Loader2, Receipt, Search, FilterX, Download } from "lucide-react";
+import { Plus, Trash2, Loader2, Receipt, Search, FilterX, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function CobranzasPage() {
   const { usuario } = useAuth();
@@ -221,133 +222,125 @@ export default function CobranzasPage() {
       />
 
       {/* Modal */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={() => setModal(false)}>
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative z-10 max-h-[100vh] sm:max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 pb-10 shadow-2xl sm:mx-4 sm:max-w-lg sm:rounded-2xl md:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Nueva Cobranza</h2>
-              <button onClick={() => setModal(false)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
-                <X size={20} />
-              </button>
+      <Dialog open={modal} onOpenChange={setModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nueva Cobranza</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Fecha</label>
+              <input
+                ref={fechaRef}
+                type="date"
+                value={form.CobranzaFecha}
+                onChange={(e) => setForm({ ...form, CobranzaFecha: e.target.value })}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Fecha</label>
-                <input
-                  ref={fechaRef}
-                  type="date"
-                  value={form.CobranzaFecha}
-                  onChange={(e) => setForm({ ...form, CobranzaFecha: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Nro Comprobante</label>
-                <input
-                  type="number"
-                  value={form.CobranzaNroComprobante}
-                  onChange={(e) => setForm({ ...form, CobranzaNroComprobante: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Alumno</label>
-                <AlumnoPicker
-                  value={form.AlumnoId}
-                  onChange={(id) => setForm({ ...form, AlumnoId: id })}
-                  onSelect={(alumno) => setAlumnoSeleccionado(alumno)}
-                />
-              </div>
-              {alumnoSeleccionado && (
-                <div className="sm:col-span-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-                  <div className="flex flex-col gap-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Curso:</span>
-                      <span className="font-medium text-gray-900">{alumnoSeleccionado.CursoNombre}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Importe Cuota:</span>
-                      <span className="font-medium text-gray-900">{formatGuaranies(Number(alumnoSeleccionado.CursoImporte ?? 0))}</span>
-                    </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Nro Comprobante</label>
+              <input
+                type="number"
+                value={form.CobranzaNroComprobante}
+                onChange={(e) => setForm({ ...form, CobranzaNroComprobante: Number(e.target.value) })}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Alumno</label>
+              <AlumnoPicker
+                value={form.AlumnoId}
+                onChange={(id) => setForm({ ...form, AlumnoId: id })}
+                onSelect={(alumno) => setAlumnoSeleccionado(alumno)}
+              />
+            </div>
+            {alumnoSeleccionado && (
+              <div className="sm:col-span-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                <div className="flex flex-col gap-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Curso:</span>
+                    <span className="font-medium text-gray-900">{alumnoSeleccionado.CursoNombre}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Importe Cuota:</span>
+                    <span className="font-medium text-gray-900">{formatGuaranies(Number(alumnoSeleccionado.CursoImporte ?? 0))}</span>
                   </div>
                 </div>
-              )}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes Pagado</label>
-                <input
-                  value={form.CobranzaMesPagado}
-                  onChange={(e) => setForm({ ...form, CobranzaMesPagado: e.target.value.toUpperCase() })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes</label>
-                <input
-                  value={form.CobranzaMes}
-                  onChange={(e) => setForm({ ...form, CobranzaMes: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Subtotal Cuota</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={formatGuaranies(form.CobranzaSubtotalCuota)}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Febrero</label>
-                <select
-                  value={form.CobranzaFebrero}
-                  onChange={(e) => setForm({ ...form, CobranzaFebrero: e.target.value })}
-                  className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="N">NO</option>
-                  <option value="S">SI</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional Detalle</label>
-                <input
-                  value={form.CobranzaAdicionalDetalle}
-                  onChange={(e) => setForm({ ...form, CobranzaAdicionalDetalle: e.target.value.toUpperCase() })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={formatMiles(form.CobranzaExamen)}
-                  onChange={(e) => setForm({ ...form, CobranzaExamen: parseMiles(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-700">Total</span>
-                  <span className="font-bold text-gray-900">{formatGuaranies(form.CobranzaSubtotalCuota + form.CobranzaExamen)}</span>
-                </div>
-              </div>
+            )}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes Pagado</label>
+              <input
+                value={form.CobranzaMesPagado}
+                onChange={(e) => setForm({ ...form, CobranzaMesPagado: e.target.value.toUpperCase() })}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
             </div>
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
-                Cancelar
-              </button>
-              <button onClick={guardar} disabled={crear.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
-                {crear.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
-              </button>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes</label>
+              <input
+                value={form.CobranzaMes}
+                onChange={(e) => setForm({ ...form, CobranzaMes: e.target.value })}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Subtotal Cuota</label>
+              <input
+                type="text"
+                readOnly
+                tabIndex={-1}
+                value={formatGuaranies(form.CobranzaSubtotalCuota)}
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Febrero</label>
+              <select
+                value={form.CobranzaFebrero}
+                onChange={(e) => setForm({ ...form, CobranzaFebrero: e.target.value })}
+                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="N">NO</option>
+                <option value="S">SI</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional Detalle</label>
+              <input
+                value={form.CobranzaAdicionalDetalle}
+                onChange={(e) => setForm({ ...form, CobranzaAdicionalDetalle: e.target.value.toUpperCase() })}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={formatMiles(form.CobranzaExamen)}
+                onChange={(e) => setForm({ ...form, CobranzaExamen: parseMiles(e.target.value) })}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium text-gray-700">Total</span>
+                <span className="font-bold text-gray-900">{formatGuaranies(form.CobranzaSubtotalCuota + form.CobranzaExamen)}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button onClick={guardar} disabled={crear.isPending} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+              {crear.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Guardar"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
