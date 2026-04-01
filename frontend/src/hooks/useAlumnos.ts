@@ -58,3 +58,35 @@ export function useEliminarAlumno() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alumnos"] }),
   });
 }
+
+export interface MesEstadoCuenta {
+  mes: number;
+  nombre: string;
+  pagado: boolean;
+  monto: number;
+  cobranzaId: number | null;
+  fecha: string | null;
+}
+
+export interface EstadoCuenta {
+  alumno: {
+    AlumnoId: number;
+    AlumnoNombre: string;
+    AlumnoApellido: string;
+    AlumnoCI: string;
+    CursoNombre: string;
+    CursoImporte: number;
+  };
+  anio: number;
+  meses: MesEstadoCuenta[];
+  totalPagado: number;
+  totalPendiente: number;
+}
+
+export function useEstadoCuenta(alumnoId: number, anio: number) {
+  return useQuery<EstadoCuenta>({
+    queryKey: ["estado-cuenta", alumnoId, anio],
+    queryFn: () => api.get(`/alumnos/${alumnoId}/estado-cuenta?anio=${anio}`),
+    enabled: alumnoId > 0,
+  });
+}

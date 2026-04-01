@@ -11,6 +11,28 @@ import { Plus, Trash2, Loader2, Receipt, Search, FilterX, Download } from "lucid
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+const MESES_CUOTA = [
+  { num: 2, nombre: "FEBRERO", abrev: "FEB" },
+  { num: 3, nombre: "MARZO", abrev: "MAR" },
+  { num: 4, nombre: "ABRIL", abrev: "ABR" },
+  { num: 5, nombre: "MAYO", abrev: "MAY" },
+  { num: 6, nombre: "JUNIO", abrev: "JUN" },
+  { num: 7, nombre: "JULIO", abrev: "JUL" },
+  { num: 8, nombre: "AGOSTO", abrev: "AGO" },
+  { num: 9, nombre: "SEPTIEMBRE", abrev: "SEP" },
+  { num: 10, nombre: "OCTUBRE", abrev: "OCT" },
+  { num: 11, nombre: "NOVIEMBRE", abrev: "NOV" },
+] as const;
+
+function mesesNumToText(mesesStr: string): string {
+  if (!mesesStr) return "";
+  const nums = mesesStr.split(",").map(Number);
+  return nums
+    .map((n) => MESES_CUOTA.find((m) => m.num === n)?.abrev)
+    .filter(Boolean)
+    .join(", ");
+}
+
 export default function CobranzasPage() {
   const { usuario } = useAuth();
   const [fechaDesde, setFechaDesde] = useState("");
@@ -19,11 +41,12 @@ export default function CobranzasPage() {
   const [modal, setModal] = useState(false);
   const fechaRef = useRef<HTMLInputElement>(null);
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<Alumno | null>(null);
+  const [mesesSeleccionados, setMesesSeleccionados] = useState<number[]>([]);
   const [form, setForm] = useState({
     CobranzaFecha: "",
     AlumnoId: 0,
     CobranzaMesPagado: "",
-    CobranzaMes: "",
+    CobranzaMes: 0,
     CobranzaSubtotalCuota: 0,
     CobranzaDiasMora: 0,
     CobranzaExamen: 0,
@@ -68,16 +91,20 @@ export default function CobranzasPage() {
     }
   }, [ultimoComprobante, modal]);
 
-  // Recalcular subtotal cuando cambia mes, febrero o alumno
+  // Recalcular subtotal, CobranzaMes, CobranzaMesPagado y CobranzaFebrero desde mesesSeleccionados
   useEffect(() => {
-    const meses = Number(form.CobranzaMes) || 0;
     const importe = Number(alumnoSeleccionado?.CursoImporte ?? 0);
-    let subtotal = meses * importe;
-    if (form.CobranzaFebrero === "S") {
-      subtotal -= Math.floor(importe / 2);
-    }
-    setForm((prev) => ({ ...prev, CobranzaSubtotalCuota: subtotal }));
-  }, [form.CobranzaMes, form.CobranzaFebrero, alumnoSeleccionado]);
+    const tieneFeb = mesesSeleccionados.includes(2);
+    const mesesNoFeb = mesesSeleccionados.filter((m) => m !== 2).length;
+    const subtotal = mesesNoFeb * importe + (tieneFeb ? Math.floor(importe / 2) : 0);
+    setForm((prev) => ({
+      ...prev,
+      CobranzaMes: mesesSeleccionados.length,
+      CobranzaMesPagado: mesesSeleccionados.sort((a, b) => a - b).join(","),
+      CobranzaFebrero: tieneFeb ? "S" : "N",
+      CobranzaSubtotalCuota: subtotal,
+    }));
+  }, [mesesSeleccionados, alumnoSeleccionado]);
 
   async function guardar() {
     await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
@@ -103,7 +130,7 @@ export default function CobranzasPage() {
                 { header: "Nro Comprobante", value: (c) => c.CobranzaNroComprobante },
                 { header: "Alumno", value: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
                 { header: "Curso", value: (c) => c.CursoNombre ?? "" },
-                { header: "Mes Pagado", value: (c) => c.CobranzaMesPagado },
+                { header: "Mes Pagado", value: (c) => mesesNumToText(c.CobranzaMesPagado) || c.CobranzaMesPagado },
                 { header: "Subtotal", value: (c) => Number(c.CobranzaSubtotalCuota) },
                 { header: "Adicional", value: (c) => Number(c.CobranzaExamen) },
                 { header: "Descuento", value: (c) => Number(c.CobranzaDescuento) },
@@ -119,7 +146,8 @@ export default function CobranzasPage() {
           <button
             onClick={() => {
               const hoy = new Date().toISOString().slice(0, 10);
-              setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
+              setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: 0, CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
+              setMesesSeleccionados([]);
               setAlumnoSeleccionado(null);
               setModal(true);
             }}
@@ -203,14 +231,14 @@ export default function CobranzasPage() {
           { header: "Nro Comprobante", sortKey: "CobranzaNroComprobante", render: (c) => formatMiles(c.CobranzaNroComprobante) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
           { header: "Curso", sortKey: "CursoNombre", render: (c) => c.CursoNombre },
-          { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
+          { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => mesesNumToText(c.CobranzaMesPagado) || c.CobranzaMesPagado },
           { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota)) },
           { header: "Total", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento)), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
         ]}
         mobileCard={(c) => (
           <>
             <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
-            <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {c.CobranzaMesPagado}</p>
+            <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {mesesNumToText(c.CobranzaMesPagado) || c.CobranzaMesPagado}</p>
             <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento))}</p>
           </>
         )}
@@ -269,21 +297,32 @@ export default function CobranzasPage() {
                 </div>
               </div>
             )}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes Pagado</label>
-              <input
-                value={form.CobranzaMesPagado}
-                onChange={(e) => setForm({ ...form, CobranzaMesPagado: e.target.value.toUpperCase() })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes</label>
-              <input
-                value={form.CobranzaMes}
-                onChange={(e) => setForm({ ...form, CobranzaMes: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Meses a Pagar</label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {MESES_CUOTA.map((mes) => {
+                  const checked = mesesSeleccionados.includes(mes.num);
+                  return (
+                    <label
+                      key={mes.num}
+                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setMesesSeleccionados((prev) =>
+                            checked ? prev.filter((m) => m !== mes.num) : [...prev, mes.num]
+                          );
+                        }}
+                        className="cursor-pointer accent-blue-600"
+                      />
+                      {mes.abrev}
+                      {mes.num === 2 && <span className="text-[10px] text-blue-500">(50%)</span>}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Subtotal Cuota</label>
@@ -296,15 +335,14 @@ export default function CobranzasPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Febrero</label>
-              <select
-                value={form.CobranzaFebrero}
-                onChange={(e) => setForm({ ...form, CobranzaFebrero: e.target.value })}
-                className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
-                <option value="N">NO</option>
-                <option value="S">SI</option>
-              </select>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Meses</label>
+              <input
+                type="text"
+                readOnly
+                tabIndex={-1}
+                value={form.CobranzaMes}
+                className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional Detalle</label>

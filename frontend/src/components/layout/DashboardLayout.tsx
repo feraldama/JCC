@@ -11,6 +11,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/alumnos": "Alumnos",
   "/dashboard/cursos": "Cursos",
   "/dashboard/cobranzas": "Cobranzas",
+  "/dashboard/estado-cuenta": "Estado de Cuenta",
   "/dashboard/facturas": "Facturas",
   "/dashboard/empleados": "Empleados",
   "/dashboard/pagos": "Pagos",
@@ -30,7 +31,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const protectedRoutes = [
-    "alumnos", "cursos", "cobranzas", "facturas",
+    "alumnos", "cursos", "cobranzas", "estado-cuenta", "facturas",
     "empleados", "pagos", "registros", "usuarios", "perfiles",
   ];
 

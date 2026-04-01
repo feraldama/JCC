@@ -51,6 +51,83 @@ router.get("/", async (req: Request, res: Response) => {
   res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
+// GET /:id/estado-cuenta - estado de cuenta del alumno por año
+router.get("/:id/estado-cuenta", async (req: Request, res: Response) => {
+  const { anio } = req.query;
+  const year = Number(anio) || new Date().getFullYear();
+
+  // Datos del alumno con curso
+  const alumnoResult = await pool.query(
+    `SELECT a.*, c."CursoNombre", c."CursoImporte"
+     FROM alumno a JOIN curso c ON a."CursoId" = c."CursoId"
+     WHERE a."AlumnoId" = $1`,
+    [req.params.id]
+  );
+  if (alumnoResult.rows.length === 0) {
+    res.status(404).json({ error: "Alumno no encontrado" });
+    return;
+  }
+  const alumno = alumnoResult.rows[0];
+  const importe = Number(alumno.CursoImporte);
+
+  // Cobranzas del alumno en el año
+  const cobranzasResult = await pool.query(
+    `SELECT "CobranzaId", "CobranzaFecha", "CobranzaMesPagado"
+     FROM cobranza
+     WHERE "AlumnoId" = $1 AND EXTRACT(YEAR FROM "CobranzaFecha") = $2`,
+    [req.params.id, year]
+  );
+
+  // Mapear meses pagados desde CobranzaMesPagado (formato "2,3,4")
+  const mesesPagados: Record<number, { cobranzaId: number; fecha: string }> = {};
+  for (const c of cobranzasResult.rows) {
+    const nums = String(c.CobranzaMesPagado).split(",").map(Number).filter((n: number) => n >= 2 && n <= 11);
+    for (const num of nums) {
+      if (!mesesPagados[num]) {
+        mesesPagados[num] = { cobranzaId: c.CobranzaId, fecha: c.CobranzaFecha };
+      }
+    }
+  }
+
+  const nombresMeses: Record<number, string> = {
+    2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
+    7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE",
+  };
+
+  let totalPagado = 0;
+  let totalPendiente = 0;
+  const meses = [];
+  for (let m = 2; m <= 11; m++) {
+    const monto = m === 2 ? Math.floor(importe / 2) : importe;
+    const pagado = !!mesesPagados[m];
+    if (pagado) totalPagado += monto;
+    else totalPendiente += monto;
+    meses.push({
+      mes: m,
+      nombre: nombresMeses[m],
+      pagado,
+      monto,
+      cobranzaId: mesesPagados[m]?.cobranzaId ?? null,
+      fecha: mesesPagados[m]?.fecha ?? null,
+    });
+  }
+
+  res.json({
+    alumno: {
+      AlumnoId: alumno.AlumnoId,
+      AlumnoNombre: alumno.AlumnoNombre,
+      AlumnoApellido: alumno.AlumnoApellido,
+      AlumnoCI: alumno.AlumnoCI,
+      CursoNombre: alumno.CursoNombre,
+      CursoImporte: importe,
+    },
+    anio: year,
+    meses,
+    totalPagado,
+    totalPendiente,
+  });
+});
+
 // GET /:id - obtener alumno por id con datos del curso
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await pool.query(

@@ -23,6 +23,7 @@ const menuRoutes: Record<string, { path: string; label: string; icon: LucideIcon
   cursos: { path: "/dashboard/cursos", label: "Cursos", icon: BookOpen },
   alumnos: { path: "/dashboard/alumnos", label: "Alumnos", icon: GraduationCap },
   cobranzas: { path: "/dashboard/cobranzas", label: "Cobranzas", icon: Receipt },
+  "estado-cuenta": { path: "/dashboard/estado-cuenta", label: "Estado de Cuenta", icon: ClipboardList },
   facturas: { path: "/dashboard/facturas", label: "Facturas", icon: FileText },
   empleados: { path: "/dashboard/empleados", label: "Empleados", icon: Users },
   pagos: { path: "/dashboard/pagos", label: "Pagos", icon: Wallet },
