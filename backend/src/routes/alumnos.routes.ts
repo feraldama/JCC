@@ -78,12 +78,17 @@ router.get("/:id/estado-cuenta", async (req: Request, res: Response) => {
     [req.params.id, year]
   );
 
-  // Mapear meses pagados desde CobranzaMesPagado (formato "2,3,4")
+  // Mapear meses pagados desde CobranzaMesPagado (formato "FEBRERO, MARZO")
+  const nombreANum: Record<string, number> = {
+    FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
+    JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11,
+  };
   const mesesPagados: Record<number, { cobranzaId: number; fecha: string }> = {};
   for (const c of cobranzasResult.rows) {
-    const nums = String(c.CobranzaMesPagado).split(",").map(Number).filter((n: number) => n >= 2 && n <= 11);
-    for (const num of nums) {
-      if (!mesesPagados[num]) {
+    const nombres = String(c.CobranzaMesPagado).split(",").map((s: string) => s.trim().toUpperCase());
+    for (const nombre of nombres) {
+      const num = nombreANum[nombre];
+      if (num && !mesesPagados[num]) {
         mesesPagados[num] = { cobranzaId: c.CobranzaId, fecha: c.CobranzaFecha };
       }
     }

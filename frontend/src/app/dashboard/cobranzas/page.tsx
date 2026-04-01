@@ -24,14 +24,6 @@ const MESES_CUOTA = [
   { num: 11, nombre: "NOVIEMBRE", abrev: "NOV" },
 ] as const;
 
-function mesesNumToText(mesesStr: string): string {
-  if (!mesesStr) return "";
-  const nums = mesesStr.split(",").map(Number);
-  return nums
-    .map((n) => MESES_CUOTA.find((m) => m.num === n)?.abrev)
-    .filter(Boolean)
-    .join(", ");
-}
 
 export default function CobranzasPage() {
   const { usuario } = useAuth();
@@ -100,7 +92,7 @@ export default function CobranzasPage() {
     setForm((prev) => ({
       ...prev,
       CobranzaMes: mesesSeleccionados.length,
-      CobranzaMesPagado: mesesSeleccionados.sort((a, b) => a - b).join(","),
+      CobranzaMesPagado: [...mesesSeleccionados].sort((a, b) => a - b).map((n) => MESES_CUOTA.find((m) => m.num === n)!.nombre).join(", "),
       CobranzaFebrero: tieneFeb ? "S" : "N",
       CobranzaSubtotalCuota: subtotal,
     }));
@@ -130,7 +122,7 @@ export default function CobranzasPage() {
                 { header: "Nro Comprobante", value: (c) => c.CobranzaNroComprobante },
                 { header: "Alumno", value: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
                 { header: "Curso", value: (c) => c.CursoNombre ?? "" },
-                { header: "Mes Pagado", value: (c) => mesesNumToText(c.CobranzaMesPagado) || c.CobranzaMesPagado },
+                { header: "Mes Pagado", value: (c) => c.CobranzaMesPagado },
                 { header: "Subtotal", value: (c) => Number(c.CobranzaSubtotalCuota) },
                 { header: "Adicional", value: (c) => Number(c.CobranzaExamen) },
                 { header: "Descuento", value: (c) => Number(c.CobranzaDescuento) },
@@ -231,14 +223,14 @@ export default function CobranzasPage() {
           { header: "Nro Comprobante", sortKey: "CobranzaNroComprobante", render: (c) => formatMiles(c.CobranzaNroComprobante) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
           { header: "Curso", sortKey: "CursoNombre", render: (c) => c.CursoNombre },
-          { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => mesesNumToText(c.CobranzaMesPagado) || c.CobranzaMesPagado },
+          { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
           { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota)) },
           { header: "Total", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento)), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
         ]}
         mobileCard={(c) => (
           <>
             <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
-            <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {mesesNumToText(c.CobranzaMesPagado) || c.CobranzaMesPagado}</p>
+            <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {c.CobranzaMesPagado}</p>
             <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento))}</p>
           </>
         )}
