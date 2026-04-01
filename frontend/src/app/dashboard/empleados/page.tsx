@@ -9,7 +9,8 @@ import {
   type Empleado,
 } from "@/hooks/useEmpleados";
 import { formatGuaranies, formatMiles, parseMiles } from "@/lib/format";
-import { Plus, Pencil, Trash2, X, Loader2, Users, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Users, AlertCircle, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 import DataTable from "@/components/DataTable";
 
 export default function EmpleadosPage() {
@@ -65,13 +66,32 @@ export default function EmpleadosPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Empleados</h1>
           <p className="mt-1 text-sm text-gray-500">Gestiona la informacion de los empleados</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Empleado
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Empleado>(
+              "/empleados",
+              { busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "CI", value: (e) => e.EmpleadoCI },
+                { header: "Nombre", value: (e) => e.EmpleadoNombre },
+                { header: "Apellido", value: (e) => e.EmpleadoApellido },
+                { header: "Monto Cobro", value: (e) => e.EmpleadoCobroMonto },
+              ],
+              "Empleados"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Empleado
+          </button>
+        </div>
       </div>
 
       <DataTable

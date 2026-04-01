@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { usePagos, useCrearPago, useEliminarPago } from "@/hooks/usePagos";
+import { usePagos, useCrearPago, useEliminarPago, type Pago } from "@/hooks/usePagos";
 import { useEmpleados } from "@/hooks/useEmpleados";
 import { useAuth } from "@/lib/auth";
 import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import DataTable from "@/components/DataTable";
-import { Plus, Trash2, X, Loader2, Wallet, Search, FilterX } from "lucide-react";
+import { Plus, Trash2, X, Loader2, Wallet, Search, FilterX, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 
 export default function PagosPage() {
   const { usuario } = useAuth();
@@ -56,13 +57,32 @@ export default function PagosPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Pagos a Empleados</h1>
           <p className="mt-1 text-sm text-gray-500">Registro de pagos realizados a empleados</p>
         </div>
-        <button
-          onClick={() => { setForm({ PagoEmpleadoFecha: "", EmpleadoId: 0, PagoEmpleadoEntregaMonto: 0, PagoEmpleadoSaldoMonto: 0, PagoEmpleadoNroRecibo: 0 }); setModal(true); }}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Pago
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Pago>(
+              "/pagos",
+              { fechaDesde: fechaDesde || undefined, fechaHasta: fechaHasta || undefined, empleadoId: filtroEmpleadoId, busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "Fecha", value: (p) => formatFecha(p.PagoEmpleadoFecha) },
+                { header: "Empleado", value: (p) => `${p.EmpleadoNombre} ${p.EmpleadoApellido}` },
+                { header: "Monto Entrega", value: (p) => p.PagoEmpleadoEntregaMonto },
+                { header: "Monto Saldo", value: (p) => p.PagoEmpleadoSaldoMonto },
+              ],
+              "Pagos"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={() => { setForm({ PagoEmpleadoFecha: "", EmpleadoId: 0, PagoEmpleadoEntregaMonto: 0, PagoEmpleadoSaldoMonto: 0, PagoEmpleadoNroRecibo: 0 }); setModal(true); }}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Pago
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}

@@ -16,8 +16,9 @@ const CODIGOS_IDENTIFICADOR: Record<number, string> = {
   15: "SIN NOMBRE",
 };
 import { useCursos } from "@/hooks/useCursos";
-import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search, FilterX, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search, FilterX, AlertCircle, Download } from "lucide-react";
 import DataTable from "@/components/DataTable";
+import { exportToExcel } from "@/lib/export";
 
 export default function AlumnosPage() {
   const [filtroCursoId, setFiltroCursoId] = useState<number | undefined>();
@@ -97,13 +98,33 @@ export default function AlumnosPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Alumnos</h1>
           <p className="mt-1 text-sm text-gray-500">Administra la informacion de los alumnos</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Alumno
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Alumno>(
+              "/alumnos",
+              { cursoId: filtroCursoId, busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "Tipo Doc.", value: (a) => CODIGOS_IDENTIFICADOR[a.AlumnoCodigoIdentificador] ?? a.AlumnoCodigoIdentificador },
+                { header: "CI", value: (a) => a.AlumnoCI },
+                { header: "Nombre", value: (a) => a.AlumnoNombre },
+                { header: "Apellido", value: (a) => a.AlumnoApellido },
+                { header: "Curso", value: (a) => a.CursoNombre ?? "" },
+              ],
+              "Alumnos"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Alumno
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}

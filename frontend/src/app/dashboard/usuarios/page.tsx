@@ -11,7 +11,8 @@ import {
   type Usuario,
 } from "@/hooks/useUsuarios";
 import { usePerfiles } from "@/hooks/usePerfiles";
-import { Plus, Pencil, Trash2, X, Loader2, UserCog, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, UserCog, Shield, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 import DataTable from "@/components/DataTable";
 
 export default function UsuariosPage() {
@@ -113,13 +114,34 @@ export default function UsuariosPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Usuarios</h1>
           <p className="mt-1 text-sm text-gray-500">Administra los usuarios del sistema</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Usuario
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Usuario>(
+              "/usuarios",
+              { busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "ID", value: (u) => u.UsuarioId },
+                { header: "Nombre", value: (u) => u.UsuarioNombre },
+                { header: "Apellido", value: (u) => u.UsuarioApellido ?? "" },
+                { header: "Correo", value: (u) => u.UsuarioCorreo ?? "" },
+                { header: "Rol", value: (u) => u.UsuarioIsAdmin === "S" ? "Super Usuario" : "Operador" },
+                { header: "Estado", value: (u) => u.UsuarioEstado === "A" ? "Activo" : "Inactivo" },
+              ],
+              "Usuarios"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Usuario
+          </button>
+        </div>
       </div>
 
       <DataTable

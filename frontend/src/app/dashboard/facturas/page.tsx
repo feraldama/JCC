@@ -8,7 +8,8 @@ import {
   useEliminarFactura,
   type Factura,
 } from "@/hooks/useFacturas";
-import { Plus, Pencil, Trash2, X, Loader2, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, FileText, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 import DataTable from "@/components/DataTable";
 import { formatMiles } from "@/lib/format";
 
@@ -57,13 +58,32 @@ export default function FacturasPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Facturas / Talonarios</h1>
           <p className="mt-1 text-sm text-gray-500">Control de talonarios y numeracion de facturas</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Talonario
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Factura>(
+              "/facturas",
+              { busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "Nro", value: (f) => f.FacturaId },
+                { header: "Timbrado", value: (f) => f.FacturaTimbrado },
+                { header: "Desde", value: (f) => f.FacturaDesde },
+                { header: "Hasta", value: (f) => f.FacturaHasta },
+              ],
+              "Facturas"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Talonario
+          </button>
+        </div>
       </div>
 
       <DataTable

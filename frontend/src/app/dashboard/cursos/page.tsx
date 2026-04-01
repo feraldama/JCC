@@ -10,7 +10,8 @@ import {
 } from "@/hooks/useCursos";
 import { formatGuaranies, formatMiles, parseMiles } from "@/lib/format";
 import DataTable from "@/components/DataTable";
-import { Plus, Pencil, Trash2, X, Loader2, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, BookOpen, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 
 export default function CursosPage() {
   const [page, setPage] = useState(0);
@@ -57,13 +58,30 @@ export default function CursosPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Cursos</h1>
           <p className="mt-1 text-sm text-gray-500">Gestiona los cursos y sus importes mensuales</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Curso
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Curso>(
+              "/cursos",
+              { busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "Nombre", value: (c) => c.CursoNombre },
+                { header: "Importe", value: (c) => c.CursoImporte },
+              ],
+              "Cursos"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Curso
+          </button>
+        </div>
       </div>
 
       <DataTable

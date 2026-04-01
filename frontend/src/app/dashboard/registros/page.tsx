@@ -11,7 +11,8 @@ import {
 import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import DataTable from "@/components/DataTable";
 import AlumnoPicker from "@/components/AlumnoPicker";
-import { Plus, Pencil, Trash2, X, Loader2, ClipboardList, Search, FilterX } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, ClipboardList, Search, FilterX, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 
 export default function RegistrosPage() {
   const [fechaDesde, setFechaDesde] = useState("");
@@ -44,7 +45,7 @@ export default function RegistrosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>("RegistroFecha");
+  const [sortBy, setSortBy] = useState<string | undefined>("RegistroId");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { data: resp, isLoading } = useRegistros({
     fechaDesde: fechaDesde || undefined,
@@ -128,13 +129,37 @@ export default function RegistrosPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Registros</h1>
           <p className="mt-1 text-sm text-gray-500">Registros contables e impositivos</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nuevo Registro
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Registro>(
+              "/registros",
+              { fechaDesde: fechaDesde || undefined, fechaHasta: fechaHasta || undefined, tipo: filtroTipo || undefined, alumnoId: filtroAlumnoId, busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "Nro", value: (r) => r.RegistroId },
+                { header: "Fecha", value: (r) => formatFecha(r.RegistroFecha) },
+                { header: "Tipo", value: (r) => r.RegistroTipoRegistro },
+                { header: "Nro Comprobante", value: (r) => r.RegistroNroComprobante },
+                { header: "IVA 10%", value: (r) => Number(r.RegistroIva10) },
+                { header: "IVA 5%", value: (r) => Number(r.RegistroIva5) },
+                { header: "IVA Exento", value: (r) => Number(r.RegistroIvaExento) },
+                { header: "Total", value: (r) => Number(r.RegistroTotal) },
+                { header: "Alumno", value: (r) => r.AlumnoNombre ? `${r.AlumnoNombre} ${r.AlumnoApellido}` : "" },
+              ],
+              "Registros"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nuevo Registro
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -213,6 +238,7 @@ export default function RegistrosPage() {
           setPage(0);
         }}
         columns={[
+          { header: "Nro", sortKey: "RegistroId", render: (r) => formatMiles(r.RegistroId) },
           { header: "Fecha", sortKey: "RegistroFecha", render: (r) => formatFecha(r.RegistroFecha) },
           { header: "Tipo", sortKey: "RegistroTipoRegistro", render: (r) => r.RegistroTipoRegistro },
           { header: "Nro Comprobante", sortKey: "RegistroNroComprobante", render: (r) => r.RegistroNroComprobante },

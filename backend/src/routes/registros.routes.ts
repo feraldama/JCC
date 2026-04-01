@@ -44,6 +44,7 @@ router.get("/", async (req: Request, res: Response) => {
   const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
   const dataParams = [...params, pageSize, pageNum * pageSize];
   const orderBy = buildOrderBy(req, {
+    RegistroId: 'r."RegistroId"',
     RegistroFecha: 'r."RegistroFecha"',
     AlumnoApellido: 'a."AlumnoApellido"',
     RegistroTotal: 'r."RegistroTotal"',

@@ -20,6 +20,7 @@ export interface Cobranza {
   AlumnoNombre?: string;
   AlumnoApellido?: string;
   AlumnoCI?: string;
+  CursoNombre?: string;
   UsuarioNombre?: string;
   UsuarioApellido?: string;
 }

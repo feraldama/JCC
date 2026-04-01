@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useCobranzas, useCrearCobranza, useEliminarCobranza, useUltimoComprobante } from "@/hooks/useCobranzas";
+import { useCobranzas, useCrearCobranza, useEliminarCobranza, useUltimoComprobante, type Cobranza } from "@/hooks/useCobranzas";
 import { useAuth } from "@/lib/auth";
 import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
 import type { Alumno } from "@/hooks/useAlumnos";
-import { Plus, Trash2, X, Loader2, Receipt, Search, FilterX } from "lucide-react";
+import { Plus, Trash2, X, Loader2, Receipt, Search, FilterX, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 
 export default function CobranzasPage() {
   const { usuario } = useAuth();
@@ -90,18 +91,43 @@ export default function CobranzasPage() {
           <h1 className="text-xl font-bold text-gray-900 md:text-2xl">Cobranzas</h1>
           <p className="mt-1 text-sm text-gray-500">Registro de cobros mensuales a alumnos</p>
         </div>
-        <button
-          onClick={() => {
-            const hoy = new Date().toISOString().slice(0, 10);
-            setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
-            setAlumnoSeleccionado(null);
-            setModal(true);
-          }}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          Nueva Cobranza
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportToExcel<Cobranza>(
+              "/cobranzas",
+              { fechaDesde: fechaDesde || undefined, fechaHasta: fechaHasta || undefined, alumnoId: filtroAlumnoId, busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
+              [
+                { header: "Nro", value: (c) => c.CobranzaId },
+                { header: "Fecha", value: (c) => formatFecha(c.CobranzaFecha) },
+                { header: "Nro Comprobante", value: (c) => c.CobranzaNroComprobante },
+                { header: "Alumno", value: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
+                { header: "Curso", value: (c) => c.CursoNombre ?? "" },
+                { header: "Mes Pagado", value: (c) => c.CobranzaMesPagado },
+                { header: "Subtotal", value: (c) => Number(c.CobranzaSubtotalCuota) },
+                { header: "Adicional", value: (c) => Number(c.CobranzaExamen) },
+                { header: "Descuento", value: (c) => Number(c.CobranzaDescuento) },
+                { header: "Total", value: (c) => Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento) },
+              ],
+              "Cobranzas"
+            )}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button
+            onClick={() => {
+              const hoy = new Date().toISOString().slice(0, 10);
+              setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
+              setAlumnoSeleccionado(null);
+              setModal(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Plus size={18} />
+            Nueva Cobranza
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
