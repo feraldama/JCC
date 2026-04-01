@@ -9,7 +9,7 @@ import {
   type Empleado,
 } from "@/hooks/useEmpleados";
 import { formatGuaranies, formatMiles, parseMiles } from "@/lib/format";
-import { Plus, Pencil, Trash2, X, Loader2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Users, AlertCircle } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
 export default function EmpleadosPage() {
@@ -40,13 +40,21 @@ export default function EmpleadosPage() {
     setModal(true);
   }
 
+  const [error, setError] = useState("");
+
   async function guardar() {
-    if (editando) {
-      await actualizar.mutateAsync({ id: editando.EmpleadoId, ...form });
-    } else {
-      await crear.mutateAsync(form);
+    try {
+      setError("");
+      if (editando) {
+        await actualizar.mutateAsync({ id: editando.EmpleadoId, ...form });
+      } else {
+        await crear.mutateAsync(form);
+      }
+      setModal(false);
+    } catch (err: any) {
+      setError(err.message || "Error al guardar");
+      setTimeout(() => setError(""), 5000);
     }
-    setModal(false);
   }
 
   return (
@@ -161,6 +169,12 @@ export default function EmpleadosPage() {
                 />
               </div>
             </div>
+            {error && (
+              <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar

@@ -48,6 +48,11 @@ router.get("/:id", async (req: Request, res: Response) => {
 // POST / - crear empleado
 router.post("/", async (req: Request, res: Response) => {
   const { EmpleadoCI, EmpleadoNombre, EmpleadoApellido, EmpleadoCobroMonto } = req.body;
+  const existe = await pool.query('SELECT 1 FROM empleado WHERE "EmpleadoCI" = $1', [EmpleadoCI]);
+  if (existe.rows.length > 0) {
+    res.status(400).json({ message: "Ya existe un empleado con ese número de CI" });
+    return;
+  }
   const result = await pool.query(
     'INSERT INTO empleado ("EmpleadoCI", "EmpleadoNombre", "EmpleadoApellido", "EmpleadoCobroMonto") VALUES ($1, $2, $3, $4) RETURNING *',
     [EmpleadoCI, EmpleadoNombre, EmpleadoApellido, EmpleadoCobroMonto]
@@ -58,6 +63,11 @@ router.post("/", async (req: Request, res: Response) => {
 // PUT /:id - actualizar empleado
 router.put("/:id", async (req: Request, res: Response) => {
   const { EmpleadoCI, EmpleadoNombre, EmpleadoApellido, EmpleadoCobroMonto } = req.body;
+  const existe = await pool.query('SELECT 1 FROM empleado WHERE "EmpleadoCI" = $1 AND "EmpleadoId" != $2', [EmpleadoCI, req.params.id]);
+  if (existe.rows.length > 0) {
+    res.status(400).json({ message: "Ya existe un empleado con ese número de CI" });
+    return;
+  }
   const result = await pool.query(
     'UPDATE empleado SET "EmpleadoCI" = $1, "EmpleadoNombre" = $2, "EmpleadoApellido" = $3, "EmpleadoCobroMonto" = $4 WHERE "EmpleadoId" = $5 RETURNING *',
     [EmpleadoCI, EmpleadoNombre, EmpleadoApellido, EmpleadoCobroMonto, req.params.id]

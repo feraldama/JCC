@@ -173,6 +173,7 @@ export default function CobranzasPage() {
         columns={[
           { header: "Nro", sortKey: "CobranzaId", render: (c) => formatMiles(c.CobranzaId) },
           { header: "Fecha", sortKey: "CobranzaFecha", render: (c) => formatFecha(c.CobranzaFecha) },
+          { header: "Nro Comprobante", sortKey: "CobranzaNroComprobante", render: (c) => formatMiles(c.CobranzaNroComprobante) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
           { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
           { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota)) },

@@ -43,6 +43,7 @@ router.get("/", async (req: Request, res: Response) => {
     CobranzaFecha: 'co."CobranzaFecha"',
     AlumnoApellido: 'a."AlumnoApellido"',
     CobranzaMes: 'co."CobranzaMes"',
+    CobranzaNroComprobante: 'co."CobranzaNroComprobante"',
     CobranzaSubtotalCuota: 'co."CobranzaSubtotalCuota"',
   }, 'co."CobranzaId" DESC');
   const result = await pool.query(
