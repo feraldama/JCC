@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useCobranzas, useCrearCobranza, useEliminarCobranza, useUltimoComprobante } from "@/hooks/useCobranzas";
 import { useAuth } from "@/lib/auth";
-import { formatGuaranies, formatFecha } from "@/lib/format";
+import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
 import type { Alumno } from "@/hooks/useAlumnos";
@@ -276,9 +276,10 @@ export default function CobranzasPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional</label>
                 <input
-                  type="number"
-                  value={form.CobranzaExamen}
-                  onChange={(e) => setForm({ ...form, CobranzaExamen: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.CobranzaExamen)}
+                  onChange={(e) => setForm({ ...form, CobranzaExamen: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>

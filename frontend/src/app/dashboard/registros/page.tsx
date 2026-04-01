@@ -8,7 +8,7 @@ import {
   useEliminarRegistro,
   type Registro,
 } from "@/hooks/useRegistros";
-import { formatGuaranies, formatFecha } from "@/lib/format";
+import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import DataTable from "@/components/DataTable";
 import AlumnoPicker from "@/components/AlumnoPicker";
 import { Plus, Pencil, Trash2, X, Loader2, ClipboardList, Search } from "lucide-react";
@@ -280,36 +280,40 @@ export default function RegistrosPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">IVA 10%</label>
                 <input
-                  type="number"
-                  value={form.RegistroIva10}
-                  onChange={(e) => setForm({ ...form, RegistroIva10: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.RegistroIva10)}
+                  onChange={(e) => setForm({ ...form, RegistroIva10: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">IVA 5%</label>
                 <input
-                  type="number"
-                  value={form.RegistroIva5}
-                  onChange={(e) => setForm({ ...form, RegistroIva5: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.RegistroIva5)}
+                  onChange={(e) => setForm({ ...form, RegistroIva5: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">IVA Exento</label>
                 <input
-                  type="number"
-                  value={form.RegistroIvaExento}
-                  onChange={(e) => setForm({ ...form, RegistroIvaExento: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.RegistroIvaExento)}
+                  onChange={(e) => setForm({ ...form, RegistroIvaExento: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Total</label>
                 <input
-                  type="number"
-                  value={form.RegistroTotal}
-                  onChange={(e) => setForm({ ...form, RegistroTotal: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.RegistroTotal)}
+                  onChange={(e) => setForm({ ...form, RegistroTotal: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>

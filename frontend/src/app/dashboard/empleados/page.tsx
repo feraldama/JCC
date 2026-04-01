@@ -8,7 +8,7 @@ import {
   useEliminarEmpleado,
   type Empleado,
 } from "@/hooks/useEmpleados";
-import { formatGuaranies } from "@/lib/format";
+import { formatGuaranies, formatMiles, parseMiles } from "@/lib/format";
 import { Plus, Pencil, Trash2, X, Loader2, Users } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
@@ -153,9 +153,10 @@ export default function EmpleadosPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Monto Cobro</label>
                 <input
-                  type="number"
-                  value={form.EmpleadoCobroMonto}
-                  onChange={(e) => setForm({ ...form, EmpleadoCobroMonto: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.EmpleadoCobroMonto)}
+                  onChange={(e) => setForm({ ...form, EmpleadoCobroMonto: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>

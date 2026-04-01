@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePagos, useCrearPago, useEliminarPago } from "@/hooks/usePagos";
 import { useEmpleados } from "@/hooks/useEmpleados";
 import { useAuth } from "@/lib/auth";
-import { formatGuaranies, formatFecha } from "@/lib/format";
+import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import DataTable from "@/components/DataTable";
 import { Plus, Trash2, X, Loader2, Wallet, Search } from "lucide-react";
 
@@ -176,18 +176,20 @@ export default function PagosPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Monto Entrega</label>
                 <input
-                  type="number"
-                  value={form.PagoEmpleadoEntregaMonto}
-                  onChange={(e) => setForm({ ...form, PagoEmpleadoEntregaMonto: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.PagoEmpleadoEntregaMonto)}
+                  onChange={(e) => setForm({ ...form, PagoEmpleadoEntregaMonto: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Monto Saldo</label>
                 <input
-                  type="number"
-                  value={form.PagoEmpleadoSaldoMonto}
-                  onChange={(e) => setForm({ ...form, PagoEmpleadoSaldoMonto: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMiles(form.PagoEmpleadoSaldoMonto)}
+                  onChange={(e) => setForm({ ...form, PagoEmpleadoSaldoMonto: parseMiles(e.target.value) })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
