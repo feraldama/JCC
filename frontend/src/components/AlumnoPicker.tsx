@@ -7,10 +7,11 @@ import { Search, X, Loader2 } from "lucide-react";
 interface AlumnoPickerProps {
   value: number;
   onChange: (id: number) => void;
+  onSelect?: (alumno: Alumno | null) => void;
   selectedLabel?: string;
 }
 
-export default function AlumnoPicker({ value, onChange, selectedLabel }: AlumnoPickerProps) {
+export default function AlumnoPicker({ value, onChange, onSelect, selectedLabel }: AlumnoPickerProps) {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
@@ -34,12 +35,14 @@ export default function AlumnoPicker({ value, onChange, selectedLabel }: AlumnoP
 
   function seleccionar(a: Alumno) {
     onChange(a.AlumnoId);
+    onSelect?.(a);
     setQuery(`${a.AlumnoApellido}, ${a.AlumnoNombre} - CI: ${a.AlumnoCI}`);
     setOpen(false);
   }
 
   function limpiar() {
     onChange(0);
+    onSelect?.(null);
     setQuery("");
     setDebounced("");
   }

@@ -45,7 +45,7 @@ router.get("/", async (req: Request, res: Response) => {
     CursoNombre: 'c."CursoNombre"',
   }, 'a."AlumnoApellido", a."AlumnoNombre"');
   const result = await pool.query(
-    `SELECT a.*, c."CursoNombre" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
+    `SELECT a.*, c."CursoNombre", c."CursoImporte" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
     dataParams
   );
   res.json({ data: result.rows, total: countResult.rows[0].total });
@@ -54,7 +54,7 @@ router.get("/", async (req: Request, res: Response) => {
 // GET /:id - obtener alumno por id con datos del curso
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await pool.query(
-    `SELECT a.*, c."CursoNombre"
+    `SELECT a.*, c."CursoNombre", c."CursoImporte"
      FROM alumno a
      JOIN curso c ON a."CursoId" = c."CursoId"
      WHERE a."AlumnoId" = $1`,

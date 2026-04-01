@@ -37,6 +37,14 @@ export function useCobranzas(filtros: FiltrosCobranzas = {}) {
   });
 }
 
+export function useUltimoComprobante(enabled: boolean) {
+  return useQuery<{ CobranzaNroComprobante: number; CobranzaTimbrado: number }>({
+    queryKey: ["cobranzas", "ultimo-comprobante"],
+    queryFn: () => api.get("/cobranzas/ultimo-comprobante"),
+    enabled,
+  });
+}
+
 export function useCrearCobranza() {
   const qc = useQueryClient();
   return useMutation({

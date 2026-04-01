@@ -10,6 +10,7 @@ export interface Alumno {
   AlumnoApellido: string;
   CursoId: number;
   CursoNombre?: string;
+  CursoImporte?: number;
 }
 
 interface FiltrosAlumnos extends PaginationParams {

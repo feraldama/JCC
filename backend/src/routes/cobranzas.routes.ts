@@ -51,6 +51,19 @@ router.get("/", async (req: Request, res: Response) => {
   res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
+// GET /ultimo-comprobante - obtener último nro comprobante y timbrado
+router.get("/ultimo-comprobante", async (_req: Request, res: Response) => {
+  const result = await pool.query(
+    `SELECT "CobranzaNroComprobante", "CobranzaTimbrado"
+     FROM cobranza ORDER BY "CobranzaNroComprobante" DESC LIMIT 1`
+  );
+  if (result.rows.length === 0) {
+    res.json({ CobranzaNroComprobante: 0, CobranzaTimbrado: 0 });
+    return;
+  }
+  res.json(result.rows[0]);
+});
+
 // GET /:id - obtener cobranza por id
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await pool.query(

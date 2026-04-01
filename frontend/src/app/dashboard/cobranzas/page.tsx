@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useCobranzas, useCrearCobranza, useEliminarCobranza } from "@/hooks/useCobranzas";
+import { useState, useRef, useEffect } from "react";
+import { useCobranzas, useCrearCobranza, useEliminarCobranza, useUltimoComprobante } from "@/hooks/useCobranzas";
 import { useAuth } from "@/lib/auth";
 import { formatGuaranies, formatFecha } from "@/lib/format";
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
+import type { Alumno } from "@/hooks/useAlumnos";
 import { Plus, Trash2, X, Loader2, Receipt, Search } from "lucide-react";
 
 export default function CobranzasPage() {
@@ -14,6 +15,8 @@ export default function CobranzasPage() {
   const [fechaHasta, setFechaHasta] = useState("");
   const [filtroAlumnoId, setFiltroAlumnoId] = useState<number | undefined>();
   const [modal, setModal] = useState(false);
+  const fechaRef = useRef<HTMLInputElement>(null);
+  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<Alumno | null>(null);
   const [form, setForm] = useState({
     CobranzaFecha: "",
     AlumnoId: 0,
@@ -25,7 +28,7 @@ export default function CobranzasPage() {
     CobranzaDescuento: 0,
     CobranzaNroComprobante: 0,
     CobranzaTimbrado: 0,
-    CobranzaFebrero: 0,
+    CobranzaFebrero: "N",
     CobranzaAdicionalDetalle: "",
   });
 
@@ -47,6 +50,32 @@ export default function CobranzasPage() {
   const cobranzas = resp?.data;
   const crear = useCrearCobranza();
   const eliminar = useEliminarCobranza();
+  const { data: ultimoComprobante } = useUltimoComprobante(modal);
+
+  useEffect(() => {
+    if (modal) setTimeout(() => fechaRef.current?.focus(), 50);
+  }, [modal]);
+
+  useEffect(() => {
+    if (ultimoComprobante && modal) {
+      setForm((prev) => ({
+        ...prev,
+        CobranzaNroComprobante: ultimoComprobante.CobranzaNroComprobante + 1,
+        CobranzaTimbrado: ultimoComprobante.CobranzaTimbrado,
+      }));
+    }
+  }, [ultimoComprobante, modal]);
+
+  // Recalcular subtotal cuando cambia mes, febrero o alumno
+  useEffect(() => {
+    const meses = Number(form.CobranzaMes) || 0;
+    const importe = Number(alumnoSeleccionado?.CursoImporte ?? 0);
+    let subtotal = meses * importe;
+    if (form.CobranzaFebrero === "S") {
+      subtotal -= Math.floor(importe / 2);
+    }
+    setForm((prev) => ({ ...prev, CobranzaSubtotalCuota: subtotal }));
+  }, [form.CobranzaMes, form.CobranzaFebrero, alumnoSeleccionado]);
 
   async function guardar() {
     await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
@@ -63,7 +92,9 @@ export default function CobranzasPage() {
         </div>
         <button
           onClick={() => {
-            setForm({ CobranzaFecha: "", AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: 0, CobranzaAdicionalDetalle: "" });
+            const hoy = new Date().toISOString().slice(0, 10);
+            setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: "", CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
+            setAlumnoSeleccionado(null);
             setModal(true);
           }}
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
@@ -125,15 +156,14 @@ export default function CobranzasPage() {
           { header: "Fecha", sortKey: "CobranzaFecha", render: (c) => formatFecha(c.CobranzaFecha) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
           { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
-          { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota) },
-          { header: "Dias Mora", render: (c) => c.CobranzaDiasMora },
-          { header: "Total", render: (c) => formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
+          { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota)) },
+          { header: "Total", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento)), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
         ]}
         mobileCard={(c) => (
           <>
             <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
             <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {c.CobranzaMesPagado}</p>
-            <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(c.CobranzaSubtotalCuota + c.CobranzaExamen - c.CobranzaDescuento)}</p>
+            <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento))}</p>
           </>
         )}
         actions={(c) => (
@@ -161,6 +191,7 @@ export default function CobranzasPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Fecha</label>
                 <input
+                  ref={fechaRef}
                   type="date"
                   value={form.CobranzaFecha}
                   onChange={(e) => setForm({ ...form, CobranzaFecha: e.target.value })}
@@ -172,8 +203,23 @@ export default function CobranzasPage() {
                 <AlumnoPicker
                   value={form.AlumnoId}
                   onChange={(id) => setForm({ ...form, AlumnoId: id })}
+                  onSelect={(alumno) => setAlumnoSeleccionado(alumno)}
                 />
               </div>
+              {alumnoSeleccionado && (
+                <div className="sm:col-span-2 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Curso:</span>
+                      <span className="font-medium text-gray-900">{alumnoSeleccionado.CursoNombre}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Importe Cuota:</span>
+                      <span className="font-medium text-gray-900">{formatGuaranies(Number(alumnoSeleccionado.CursoImporte ?? 0))}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Mes Pagado</label>
                 <input
@@ -193,37 +239,10 @@ export default function CobranzasPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Subtotal Cuota</label>
                 <input
-                  type="number"
-                  value={form.CobranzaSubtotalCuota}
-                  onChange={(e) => setForm({ ...form, CobranzaSubtotalCuota: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Dias Mora</label>
-                <input
-                  type="number"
-                  value={form.CobranzaDiasMora}
-                  onChange={(e) => setForm({ ...form, CobranzaDiasMora: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Examen</label>
-                <input
-                  type="number"
-                  value={form.CobranzaExamen}
-                  onChange={(e) => setForm({ ...form, CobranzaExamen: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Descuento</label>
-                <input
-                  type="number"
-                  value={form.CobranzaDescuento}
-                  onChange={(e) => setForm({ ...form, CobranzaDescuento: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  type="text"
+                  readOnly
+                  value={formatGuaranies(form.CobranzaSubtotalCuota)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
                 />
               </div>
               <div>
@@ -236,30 +255,38 @@ export default function CobranzasPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Timbrado</label>
-                <input
-                  type="number"
-                  value={form.CobranzaTimbrado}
-                  onChange={(e) => setForm({ ...form, CobranzaTimbrado: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Febrero</label>
+                <select
+                  value={form.CobranzaFebrero}
+                  onChange={(e) => setForm({ ...form, CobranzaFebrero: e.target.value })}
+                  className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="N">NO</option>
+                  <option value="S">SI</option>
+                </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Febrero</label>
-                <input
-                  type="number"
-                  value={form.CobranzaFebrero}
-                  onChange={(e) => setForm({ ...form, CobranzaFebrero: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional Detalle</label>
                 <input
                   value={form.CobranzaAdicionalDetalle}
                   onChange={(e) => setForm({ ...form, CobranzaAdicionalDetalle: e.target.value })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional</label>
+                <input
+                  type="number"
+                  value={form.CobranzaExamen}
+                  onChange={(e) => setForm({ ...form, CobranzaExamen: Number(e.target.value) })}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-gray-700">Total</span>
+                  <span className="font-bold text-gray-900">{formatGuaranies(form.CobranzaSubtotalCuota + form.CobranzaExamen)}</span>
+                </div>
               </div>
             </div>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
