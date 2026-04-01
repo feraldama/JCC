@@ -8,6 +8,13 @@ import {
   useEliminarAlumno,
   type Alumno,
 } from "@/hooks/useAlumnos";
+
+const CODIGOS_IDENTIFICADOR: Record<number, string> = {
+  12: "CEDULA DE IDENTIDAD",
+  11: "RUC",
+  14: "CEDULA EXTRANJERA",
+  15: "SIN NOMBRE",
+};
 import { useCursos } from "@/hooks/useCursos";
 import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search } from "lucide-react";
 import DataTable from "@/components/DataTable";
@@ -146,7 +153,7 @@ export default function AlumnosPage() {
           setPage(0);
         }}
         columns={[
-          { header: "Codigo", render: (a) => a.AlumnoCodigoIdentificador },
+          { header: "Tipo Doc.", render: (a) => CODIGOS_IDENTIFICADOR[a.AlumnoCodigoIdentificador] ?? a.AlumnoCodigoIdentificador },
           { header: "CI", sortKey: "AlumnoCI", render: (a) => a.AlumnoCI },
           { header: "Nombre", sortKey: "AlumnoNombre", render: (a) => a.AlumnoNombre },
           { header: "Apellido", sortKey: "AlumnoApellido", render: (a) => a.AlumnoApellido },
@@ -187,13 +194,17 @@ export default function AlumnosPage() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">Codigo Identificador</label>
-                <input
-                  type="number"
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Tipo Documento</label>
+                <select
                   value={form.AlumnoCodigoIdentificador}
                   onChange={(e) => setForm({ ...form, AlumnoCodigoIdentificador: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
+                  className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value={0} disabled>Seleccionar...</option>
+                  {Object.entries(CODIGOS_IDENTIFICADOR).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">CI</label>

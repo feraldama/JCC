@@ -9,6 +9,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Labels no deben tener cursor pointer */
+label {
+  cursor: default;
+}
+
 /* Cursor pointer en elementos clickeables */
 button,
 a,
