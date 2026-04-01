@@ -109,6 +109,22 @@ router.post("/", async (req: Request, res: Response) => {
       CobranzaTimbrado, CobranzaFebrero, CobranzaAdicionalDetalle
     ]
   );
+
+  // Crear registro contable asociado
+  const nroComp = `001-001-${String(CobranzaNroComprobante).padStart(7, "0")}`;
+  const total = Number(CobranzaSubtotalCuota) + Number(CobranzaExamen) - Number(CobranzaDescuento);
+  await pool.query(
+    `INSERT INTO registro (
+      "RegistroTipoRegistro", "AlumnoId", "RegistroTipoComprobante",
+      "RegistroFecha", "RegistroTimbrado", "RegistroNroComprobante",
+      "RegistroIva10", "RegistroIva5", "RegistroIvaExento", "RegistroTotal",
+      "RegistroCodigoCondicion", "RegistroMonedaExtranjera",
+      "RegistroImputaIva", "RegistroImputaIre", "RegistroImputaIrp",
+      "RegistroComprobanteAsociado", "RegistroTimbradoAsociado"
+    ) VALUES (1, $1, 109, $2, $3, $4, $5, 0, $6, $7, 1, 'N', 'S', 'N', 'N', '', '')`,
+    [AlumnoId, CobranzaFecha, CobranzaTimbrado, nroComp, CobranzaExamen, CobranzaSubtotalCuota, total]
+  );
+
   res.status(201).json(result.rows[0]);
 });
 
