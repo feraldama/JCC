@@ -27,6 +27,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Error al iniciar sesión");
+      setTimeout(() => setError(""), 5000);
     } finally {
       setLoading(false);
     }

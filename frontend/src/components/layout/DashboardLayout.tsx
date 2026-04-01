@@ -24,16 +24,34 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, usuario, menus } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const protectedRoutes = [
+    "alumnos", "cursos", "cobranzas", "facturas",
+    "empleados", "pagos", "registros", "usuarios", "perfiles",
+  ];
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push("/login");
     }
   }, [loading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (loading || !isAuthenticated || !usuario) return;
+    if (usuario.UsuarioIsAdmin === "S") return;
+
+    const segment = pathname.split("/")[2];
+    if (!segment || !protectedRoutes.includes(segment)) return;
+
+    const allowed = menus.some((m) => m.MenuId.toLowerCase() === segment);
+    if (!allowed) {
+      router.push("/dashboard");
+    }
+  }, [loading, isAuthenticated, usuario, menus, pathname, router]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -52,6 +70,13 @@ export default function DashboardLayout({
   }
 
   if (!isAuthenticated) return null;
+
+  // No renderizar contenido si el usuario no tiene permiso para esta ruta
+  const segment = pathname.split("/")[2];
+  if (segment && protectedRoutes.includes(segment) && usuario?.UsuarioIsAdmin !== "S") {
+    const allowed = menus.some((m) => m.MenuId.toLowerCase() === segment);
+    if (!allowed) return null;
+  }
 
   const pageTitle =
     pageTitles[pathname] ??

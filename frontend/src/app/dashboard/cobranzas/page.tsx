@@ -7,7 +7,7 @@ import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/for
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
 import type { Alumno } from "@/hooks/useAlumnos";
-import { Plus, Trash2, X, Loader2, Receipt, Search } from "lucide-react";
+import { Plus, Trash2, X, Loader2, Receipt, Search, FilterX } from "lucide-react";
 
 export default function CobranzasPage() {
   const { usuario } = useAuth();
@@ -106,29 +106,47 @@ export default function CobranzasPage() {
 
       {/* Filtros */}
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
-          <Search size={16} />
-          Filtros
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <Search size={16} />
+            Filtros
+          </div>
+          {(fechaDesde || fechaHasta || filtroAlumnoId) && (
+            <button
+              onClick={() => { setFechaDesde(""); setFechaHasta(""); setFiltroAlumnoId(undefined); setPage(0); }}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <input
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            placeholder="Fecha desde"
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
-          <input
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            placeholder="Fecha hasta"
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
-          <AlumnoPicker
-            value={filtroAlumnoId ?? 0}
-            onChange={(id) => setFiltroAlumnoId(id || undefined)}
-          />
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Fecha desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Fecha hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Alumno</label>
+            <AlumnoPicker
+              value={filtroAlumnoId ?? 0}
+              onChange={(id) => setFiltroAlumnoId(id || undefined)}
+            />
+          </div>
         </div>
       </div>
 

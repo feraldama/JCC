@@ -16,7 +16,7 @@ const CODIGOS_IDENTIFICADOR: Record<number, string> = {
   15: "SIN NOMBRE",
 };
 import { useCursos } from "@/hooks/useCursos";
-import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search, FilterX } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
 export default function AlumnosPage() {
@@ -101,9 +101,20 @@ export default function AlumnosPage() {
 
       {/* Filtros */}
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
-          <Search size={16} />
-          Filtros
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <Search size={16} />
+            Filtros
+          </div>
+          {(filtroNombre || filtroCI || filtroCursoId) && (
+            <button
+              onClick={() => { setFiltroNombre(""); setFiltroCI(""); setFiltroCursoId(undefined); setPage(0); }}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+            >
+              <FilterX size={14} />
+              Limpiar filtros
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <input

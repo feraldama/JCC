@@ -6,11 +6,13 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 
 async function handleResponse(res: Response) {
   if (res.status === 401) {
-    if (typeof window !== "undefined") {
+    const isLoginRequest = res.url.includes("/auth/login");
+    if (!isLoginRequest && typeof window !== "undefined") {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
-    throw new Error("No autorizado");
+    const error = await res.json().catch(() => ({ message: "Credenciales incorrectas" }));
+    throw new Error(error.message || "Credenciales incorrectas");
   }
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));
