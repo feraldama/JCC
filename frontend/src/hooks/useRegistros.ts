@@ -24,6 +24,7 @@ export interface Registro {
   AlumnoNombre?: string;
   AlumnoApellido?: string;
   AlumnoCI?: string;
+  AlumnoCodigoIdentificador?: number;
 }
 
 interface FiltrosRegistros extends PaginationParams {

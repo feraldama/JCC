@@ -52,7 +52,7 @@ router.get("/", async (req: Request, res: Response) => {
     RegistroNroComprobante: 'r."RegistroNroComprobante"',
   }, 'r."RegistroId" DESC');
   const result = await pool.query(
-    `SELECT r.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
+    `SELECT r.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI", a."AlumnoCodigoIdentificador" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
     dataParams
   );
   res.json({ data: result.rows, total: countResult.rows[0].total });
