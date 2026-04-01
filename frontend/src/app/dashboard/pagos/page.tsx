@@ -25,8 +25,8 @@ export default function PagosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>();
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<string | undefined>("PagoEmpleadoFecha");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { data: resp, isLoading } = usePagos({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,

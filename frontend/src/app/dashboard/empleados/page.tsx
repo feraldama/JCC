@@ -16,7 +16,7 @@ export default function EmpleadosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortBy, setSortBy] = useState<string | undefined>("EmpleadoApellido");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = useEmpleados({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const empleados = resp?.data;

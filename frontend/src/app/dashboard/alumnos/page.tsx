@@ -29,7 +29,7 @@ export default function AlumnosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>();
+  const [sortBy, setSortBy] = useState<string | undefined>("AlumnoApellido");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = useAlumnos({
     nombre: filtroNombre || undefined,

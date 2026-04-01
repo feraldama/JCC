@@ -35,8 +35,8 @@ export default function CobranzasPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>();
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<string | undefined>("CobranzaFecha");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { data: resp, isLoading } = useCobranzas({
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
