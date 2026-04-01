@@ -35,7 +35,7 @@ export default function CobranzasPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>("CobranzaFecha");
+  const [sortBy, setSortBy] = useState<string | undefined>("CobranzaId");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { data: resp, isLoading } = useCobranzas({
     fechaDesde: fechaDesde || undefined,
@@ -171,6 +171,7 @@ export default function CobranzasPage() {
           setPage(0);
         }}
         columns={[
+          { header: "Nro", sortKey: "CobranzaId", render: (c) => formatMiles(c.CobranzaId) },
           { header: "Fecha", sortKey: "CobranzaFecha", render: (c) => formatFecha(c.CobranzaFecha) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
           { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
