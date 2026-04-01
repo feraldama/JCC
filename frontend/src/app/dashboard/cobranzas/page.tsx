@@ -175,6 +175,7 @@ export default function CobranzasPage() {
           { header: "Fecha", sortKey: "CobranzaFecha", render: (c) => formatFecha(c.CobranzaFecha) },
           { header: "Nro Comprobante", sortKey: "CobranzaNroComprobante", render: (c) => formatMiles(c.CobranzaNroComprobante) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
+          { header: "Curso", sortKey: "CursoNombre", render: (c) => c.CursoNombre },
           { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
           { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota)) },
           { header: "Total", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento)), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },

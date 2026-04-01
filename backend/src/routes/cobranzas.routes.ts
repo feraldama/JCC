@@ -32,7 +32,7 @@ router.get("/", async (req: Request, res: Response) => {
     i++;
   }
 
-  const baseFrom = `FROM cobranza co JOIN alumno a ON co."AlumnoId" = a."AlumnoId" JOIN usuario u ON co."UsuarioId" = u."UsuarioId" ${where}`;
+  const baseFrom = `FROM cobranza co JOIN alumno a ON co."AlumnoId" = a."AlumnoId" JOIN curso c ON a."CursoId" = c."CursoId" JOIN usuario u ON co."UsuarioId" = u."UsuarioId" ${where}`;
   const countResult = await pool.query(`SELECT COUNT(*)::int AS total ${baseFrom}`, params);
 
   const pageNum = Math.max(0, Number(page) || 0);
@@ -42,12 +42,13 @@ router.get("/", async (req: Request, res: Response) => {
     CobranzaId: 'co."CobranzaId"',
     CobranzaFecha: 'co."CobranzaFecha"',
     AlumnoApellido: 'a."AlumnoApellido"',
+    CursoNombre: 'c."CursoNombre"',
     CobranzaMes: 'co."CobranzaMes"',
     CobranzaNroComprobante: 'co."CobranzaNroComprobante"',
     CobranzaSubtotalCuota: 'co."CobranzaSubtotalCuota"',
   }, 'co."CobranzaId" DESC');
   const result = await pool.query(
-    `SELECT co.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
+    `SELECT co.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI", c."CursoNombre", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,
     dataParams
   );
   res.json({ data: result.rows, total: countResult.rows[0].total });
