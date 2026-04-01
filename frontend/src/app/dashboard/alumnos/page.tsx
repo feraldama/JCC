@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useAlumnos,
   useCrearAlumno,
@@ -16,17 +16,15 @@ const CODIGOS_IDENTIFICADOR: Record<number, string> = {
   15: "SIN NOMBRE",
 };
 import { useCursos } from "@/hooks/useCursos";
-import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search, FilterX } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, GraduationCap, Search, FilterX, AlertCircle } from "lucide-react";
 import DataTable from "@/components/DataTable";
 
 export default function AlumnosPage() {
-  const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroCI, setFiltroCI] = useState("");
   const [filtroCursoId, setFiltroCursoId] = useState<number | undefined>();
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState<Alumno | null>(null);
   const [form, setForm] = useState({
-    AlumnoCodigoIdentificador: 0,
+    AlumnoCodigoIdentificador: 12,
     AlumnoCI: "",
     AlumnoNombre: "",
     AlumnoApellido: "",
@@ -39,8 +37,6 @@ export default function AlumnosPage() {
   const [sortBy, setSortBy] = useState<string | undefined>("AlumnoApellido");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { data: resp, isLoading } = useAlumnos({
-    nombre: filtroNombre || undefined,
-    ci: filtroCI || undefined,
     cursoId: filtroCursoId,
     busqueda: busqueda || undefined,
     page,
@@ -49,16 +45,19 @@ export default function AlumnosPage() {
     sortDir: sortBy ? sortDir : undefined,
   });
   const alumnos = resp?.data;
-  const { data: cursosResp } = useCursos();
+  const { data: cursosResp } = useCursos({ limit: 100 });
   const cursos = cursosResp?.data;
   const crear = useCrearAlumno();
   const actualizar = useActualizarAlumno();
   const eliminar = useEliminarAlumno();
 
+  const ciRef = useRef<HTMLInputElement>(null);
+
   function abrirCrear() {
     setEditando(null);
-    setForm({ AlumnoCodigoIdentificador: 0, AlumnoCI: "", AlumnoNombre: "", AlumnoApellido: "", CursoId: 0 });
+    setForm({ AlumnoCodigoIdentificador: 12, AlumnoCI: "", AlumnoNombre: "", AlumnoApellido: "", CursoId: 0 });
     setModal(true);
+    setTimeout(() => ciRef.current?.focus(), 50);
   }
 
   function abrirEditar(a: Alumno) {
@@ -73,13 +72,21 @@ export default function AlumnosPage() {
     setModal(true);
   }
 
+  const [error, setError] = useState("");
+
   async function guardar() {
-    if (editando) {
-      await actualizar.mutateAsync({ id: editando.AlumnoId, ...form });
-    } else {
-      await crear.mutateAsync(form);
+    try {
+      setError("");
+      if (editando) {
+        await actualizar.mutateAsync({ id: editando.AlumnoId, ...form });
+      } else {
+        await crear.mutateAsync(form);
+      }
+      setModal(false);
+    } catch (err: any) {
+      setError(err.message || "Error al guardar");
+      setTimeout(() => setError(""), 5000);
     }
-    setModal(false);
   }
 
   return (
@@ -106,9 +113,9 @@ export default function AlumnosPage() {
             <Search size={16} />
             Filtros
           </div>
-          {(filtroNombre || filtroCI || filtroCursoId) && (
+          {(busqueda || filtroCursoId) && (
             <button
-              onClick={() => { setFiltroNombre(""); setFiltroCI(""); setFiltroCursoId(undefined); setPage(0); }}
+              onClick={() => { setBusqueda(""); setFiltroCursoId(undefined); setPage(0); }}
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
             >
               <FilterX size={14} />
@@ -116,23 +123,17 @@ export default function AlumnosPage() {
             </button>
           )}
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <input
-            placeholder="Buscar por nombre..."
-            value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
-          <input
-            placeholder="Buscar por CI..."
-            value={filtroCI}
-            onChange={(e) => setFiltroCI(e.target.value)}
+            placeholder="Buscar por nombre, apellido o CI..."
+            value={busqueda}
+            onChange={(e) => { setBusqueda(e.target.value); setPage(0); }}
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
           <select
             value={filtroCursoId ?? ""}
-            onChange={(e) => setFiltroCursoId(e.target.value ? Number(e.target.value) : undefined)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            onChange={(e) => { setFiltroCursoId(e.target.value ? Number(e.target.value) : undefined); setPage(0); }}
+            className="w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="">Todos los cursos</option>
             {cursos?.map((c) => (
@@ -150,8 +151,6 @@ export default function AlumnosPage() {
         emptyIcon={GraduationCap}
         emptyText="No hay alumnos para mostrar"
         total={resp?.total}
-        searchPlaceholder="Buscar por nombre, apellido o CI..."
-        onSearch={(q) => { setBusqueda(q); setPage(0); }}
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
@@ -194,7 +193,7 @@ export default function AlumnosPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={() => setModal(false)}>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:mx-4 sm:max-w-lg sm:rounded-2xl md:p-6"
+            className="relative z-10 max-h-[100vh] sm:max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 pb-10 shadow-2xl sm:mx-4 sm:max-w-lg sm:rounded-2xl md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-5 flex items-center justify-between">
@@ -220,6 +219,7 @@ export default function AlumnosPage() {
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">CI</label>
                 <input
+                  ref={ciRef}
                   value={form.AlumnoCI}
                   onChange={(e) => setForm({ ...form, AlumnoCI: e.target.value })}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -229,16 +229,16 @@ export default function AlumnosPage() {
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Nombre</label>
                 <input
                   value={form.AlumnoNombre}
-                  onChange={(e) => setForm({ ...form, AlumnoNombre: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  onChange={(e) => setForm({ ...form, AlumnoNombre: e.target.value.toUpperCase() })}
+                  className="w-full uppercase rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">Apellido</label>
                 <input
                   value={form.AlumnoApellido}
-                  onChange={(e) => setForm({ ...form, AlumnoApellido: e.target.value })}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  onChange={(e) => setForm({ ...form, AlumnoApellido: e.target.value.toUpperCase() })}
+                  className="w-full uppercase rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -255,6 +255,12 @@ export default function AlumnosPage() {
                 </select>
               </div>
             </div>
+            {error && (
+              <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button onClick={() => setModal(false)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Cancelar

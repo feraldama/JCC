@@ -6,7 +6,24 @@
 Todos los elementos interactivos (botones, links, selects, elementos con `onClick`) deben tener la clase `cursor-pointer` de Tailwind.
 
 ### Diseño responsive
-Todos los componentes deben ser responsive (mobile-first). Usar las clases responsive de Tailwind (`sm:`, `md:`, `lg:`) para adaptar el layout. El `DataTable` ya maneja esto con cards en mobile y tabla en desktop. Los modales usan bottom-sheet en mobile y centrado en desktop. Los grids de formularios usan `grid-cols-1 sm:grid-cols-2`.
+Todos los componentes deben ser responsive (mobile-first). Usar las clases responsive de Tailwind (`sm:`, `md:`, `lg:`) para adaptar el layout. El `DataTable` ya maneja esto con cards en mobile y tabla en desktop. Los grids de formularios usan `grid-cols-1 sm:grid-cols-2`.
+
+### Modales responsive
+Todos los modales deben ser responsive: bottom-sheet en mobile y centrado en desktop. Estructura requerida:
+
+```tsx
+{/* Overlay */}
+<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+  {/* Modal */}
+  <div className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl">
+    {/* Contenido */}
+  </div>
+</div>
+```
+
+- `items-end` en mobile para bottom-sheet, `sm:items-center` para centrar en desktop.
+- `rounded-t-2xl` en mobile (solo esquinas superiores), `sm:rounded-2xl` en desktop.
+- `max-h-[90vh] overflow-y-auto` para scroll si el contenido es largo.
 
 ### Formato de fechas
 Todas las fechas visibles en el frontend deben mostrarse en formato **dd/mm/aaaa**.

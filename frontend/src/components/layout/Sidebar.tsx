@@ -20,8 +20,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 const menuRoutes: Record<string, { path: string; label: string; icon: LucideIcon }> = {
-  alumnos: { path: "/dashboard/alumnos", label: "Alumnos", icon: GraduationCap },
   cursos: { path: "/dashboard/cursos", label: "Cursos", icon: BookOpen },
+  alumnos: { path: "/dashboard/alumnos", label: "Alumnos", icon: GraduationCap },
   cobranzas: { path: "/dashboard/cobranzas", label: "Cobranzas", icon: Receipt },
   facturas: { path: "/dashboard/facturas", label: "Facturas", icon: FileText },
   empleados: { path: "/dashboard/empleados", label: "Empleados", icon: Users },
@@ -77,11 +77,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <Link
           href="/dashboard"
           onClick={onClose}
-          className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-            pathname === "/dashboard"
+          className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${pathname === "/dashboard"
               ? "border-l-3 border-blue-400 bg-white/15 text-white"
               : "text-slate-300 hover:bg-white/10 hover:text-white"
-          }`}
+            }`}
         >
           <LayoutDashboard className="h-[18px] w-[18px]" />
           Dashboard
@@ -94,11 +93,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               key={item.path}
               href={item.path}
               onClick={onClose}
-              className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-                isActive
+              className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${isActive
                   ? "border-l-3 border-blue-400 bg-white/15 text-white"
                   : "text-slate-300 hover:bg-white/10 hover:text-white"
-              }`}
+                }`}
             >
               <Icon className="h-[18px] w-[18px]" />
               {item.label}
@@ -139,17 +137,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${
-          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
         onClick={onClose}
       />
 
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:hidden ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {sidebarContent}
       </div>
