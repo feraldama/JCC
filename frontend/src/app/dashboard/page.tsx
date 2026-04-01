@@ -263,7 +263,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <p className="text-sm font-semibold text-green-600">
-                    {formatGuaranies(c.CobranzaSubtotalCuota)}
+                    {formatGuaranies(c.CobranzaTotal)}
                   </p>
                 </div>
               ))}

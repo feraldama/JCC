@@ -31,7 +31,7 @@ router.get("/", async (_req: Request, res: Response) => {
     // Cobranzas del mes actual: cantidad y monto total
     pool.query(
       `SELECT COUNT(*)::int AS cantidad,
-              COALESCE(SUM("CobranzaSubtotalCuota"), 0)::bigint AS monto
+              COALESCE(SUM("CobranzaSubtotalCuota" + "CobranzaExamen" - "CobranzaDescuento"), 0)::bigint AS monto
        FROM cobranza
        WHERE "CobranzaFecha" >= $1 AND "CobranzaFecha" <= $2`,
       [primerDiaMes, ultimoDiaMes]
@@ -58,7 +58,7 @@ router.get("/", async (_req: Request, res: Response) => {
     pool.query(
       `SELECT TO_CHAR("CobranzaFecha", 'YYYY-MM') AS mes,
               COUNT(*)::int AS cantidad,
-              COALESCE(SUM("CobranzaSubtotalCuota"), 0)::bigint AS monto
+              COALESCE(SUM("CobranzaSubtotalCuota" + "CobranzaExamen" - "CobranzaDescuento"), 0)::bigint AS monto
        FROM cobranza
        WHERE "CobranzaFecha" >= (CURRENT_DATE - INTERVAL '6 months')
        GROUP BY TO_CHAR("CobranzaFecha", 'YYYY-MM')
@@ -67,7 +67,8 @@ router.get("/", async (_req: Request, res: Response) => {
 
     // Últimas 5 cobranzas
     pool.query(
-      `SELECT co."CobranzaId", co."CobranzaFecha", co."CobranzaSubtotalCuota",
+      `SELECT co."CobranzaId", co."CobranzaFecha",
+              co."CobranzaSubtotalCuota" + co."CobranzaExamen" - co."CobranzaDescuento" AS "CobranzaTotal",
               co."CobranzaMesPagado",
               a."AlumnoNombre", a."AlumnoApellido"
        FROM cobranza co
@@ -113,7 +114,7 @@ router.get("/", async (_req: Request, res: Response) => {
     })),
     cobranzasRecientes: cobranzasRecientes.rows.map((r: any) => ({
       ...r,
-      CobranzaSubtotalCuota: Number(r.CobranzaSubtotalCuota),
+      CobranzaTotal: Number(r.CobranzaTotal),
     })),
     alumnosMorosos: alumnosMorosos.rows.map((r: any) => ({
       ...r,

@@ -11,7 +11,7 @@ export interface DashboardStats {
   cobranzasRecientes: {
     CobranzaId: number;
     CobranzaFecha: string;
-    CobranzaSubtotalCuota: number;
+    CobranzaTotal: number;
     CobranzaMesPagado: string;
     AlumnoNombre: string;
     AlumnoApellido: string;
