@@ -10,13 +10,14 @@ import {
 } from "@/hooks/useFacturas";
 import { Plus, Pencil, Trash2, X, Loader2, FileText } from "lucide-react";
 import DataTable from "@/components/DataTable";
+import { formatMiles } from "@/lib/format";
 
 export default function FacturasPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>("FacturaTimbrado");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<string | undefined>("FacturaId");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { data: resp, isLoading } = useFacturas({ busqueda: busqueda || undefined, page, limit: pageSize, sortBy, sortDir: sortBy ? sortDir : undefined });
   const facturas = resp?.data;
   const crear = useCrearFactura();
@@ -86,6 +87,7 @@ export default function FacturasPage() {
           setPage(0);
         }}
         columns={[
+          { header: "Nro", sortKey: "FacturaId", render: (f) => formatMiles(f.FacturaId) },
           { header: "Timbrado", sortKey: "FacturaTimbrado", render: (f) => f.FacturaTimbrado },
           { header: "Desde", sortKey: "FacturaDesde", render: (f) => f.FacturaDesde },
           { header: "Hasta", sortKey: "FacturaHasta", render: (f) => f.FacturaHasta },
