@@ -10,6 +10,7 @@ import type { Alumno } from "@/hooks/useAlumnos";
 import { Plus, Trash2, Loader2, Receipt, Search, FilterX, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 
 const MESES_CUOTA = [
   { num: 2, nombre: "FEBRERO", abrev: "FEB" },
@@ -99,8 +100,13 @@ export default function CobranzasPage() {
   }, [mesesSeleccionados, alumnoSeleccionado]);
 
   async function guardar() {
-    await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
-    setModal(false);
+    try {
+      await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
+      setModal(false);
+      mostrarExito("Cobranza registrada");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al guardar");
+    }
   }
 
   return (
@@ -235,7 +241,7 @@ export default function CobranzasPage() {
           </>
         )}
         actions={(c) => (
-          <button onClick={() => { if (confirm("¿Eliminar esta cobranza?")) eliminar.mutate(c.CobranzaId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+          <button onClick={async () => { if (await confirmarEliminacion("esta cobranza")) eliminar.mutate(c.CobranzaId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
             <Trash2 size={15} />
           </button>
         )}

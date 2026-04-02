@@ -13,6 +13,7 @@ import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "@/components/DataTable";
 import { formatMiles } from "@/lib/format";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 
 export default function FacturasPage() {
   const [page, setPage] = useState(0);
@@ -45,12 +46,17 @@ export default function FacturasPage() {
   }
 
   async function guardar() {
-    if (editando) {
-      await actualizar.mutateAsync({ id: editando.FacturaId, ...form });
-    } else {
-      await crear.mutateAsync(form);
+    try {
+      if (editando) {
+        await actualizar.mutateAsync({ id: editando.FacturaId, ...form });
+      } else {
+        await crear.mutateAsync(form);
+      }
+      setModal(false);
+      mostrarExito(editando ? "Talonario actualizado" : "Talonario creado");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al guardar");
     }
-    setModal(false);
   }
 
   return (
@@ -126,7 +132,7 @@ export default function FacturasPage() {
             <button onClick={() => abrirEditar(f)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
               <Pencil size={15} />
             </button>
-            <button onClick={() => { if (confirm("¿Eliminar este talonario?")) eliminar.mutate(f.FacturaId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+            <button onClick={async () => { if (await confirmarEliminacion("este talonario")) eliminar.mutate(f.FacturaId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
               <Trash2 size={15} />
             </button>
           </>

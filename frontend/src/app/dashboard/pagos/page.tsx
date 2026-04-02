@@ -9,6 +9,7 @@ import DataTable from "@/components/DataTable";
 import { Plus, Trash2, Loader2, Wallet, Search, FilterX, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 
 export default function PagosPage() {
   const { usuario } = useAuth();
@@ -46,8 +47,13 @@ export default function PagosPage() {
   const eliminar = useEliminarPago();
 
   async function guardar() {
-    await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
-    setModal(false);
+    try {
+      await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
+      setModal(false);
+      mostrarExito("Pago registrado");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al guardar");
+    }
   }
 
   return (
@@ -162,7 +168,7 @@ export default function PagosPage() {
           </>
         )}
         actions={(p) => (
-          <button onClick={() => { if (confirm("¿Eliminar este pago?")) eliminar.mutate(p.PagoEmpleadoId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+          <button onClick={async () => { if (await confirmarEliminacion("este pago")) eliminar.mutate(p.PagoEmpleadoId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
             <Trash2 size={15} />
           </button>
         )}

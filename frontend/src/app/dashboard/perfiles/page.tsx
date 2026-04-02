@@ -13,6 +13,7 @@ import {
 import { Plus, Pencil, Trash2, Loader2, Shield, Settings, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 import DataTable from "@/components/DataTable";
 
 export default function PerfilesPage() {
@@ -60,19 +61,29 @@ export default function PerfilesPage() {
   }
 
   async function guardar() {
-    if (editando) {
-      await actualizar.mutateAsync({ id: editando.PerfilId, ...form });
-    } else {
-      await crear.mutateAsync(form);
+    try {
+      if (editando) {
+        await actualizar.mutateAsync({ id: editando.PerfilId, ...form });
+      } else {
+        await crear.mutateAsync(form);
+      }
+      setModal(false);
+      mostrarExito(editando ? "Perfil actualizado" : "Perfil creado");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al guardar");
     }
-    setModal(false);
   }
 
   async function guardarMenus() {
-    if (perfilMenus) {
-      await asignarMenus.mutateAsync({ id: perfilMenus.PerfilId, menus: menusSeleccionados });
+    try {
+      if (perfilMenus) {
+        await asignarMenus.mutateAsync({ id: perfilMenus.PerfilId, menus: menusSeleccionados });
+      }
+      setModalMenus(false);
+      mostrarExito("Menús asignados");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al asignar menús");
     }
-    setModalMenus(false);
   }
 
   function toggleMenu(menuId: string) {
@@ -165,7 +176,7 @@ export default function PerfilesPage() {
             <button onClick={() => abrirMenus(p)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
               <Settings size={15} />
             </button>
-            <button onClick={() => { if (confirm("¿Eliminar este perfil?")) eliminar.mutate(p.PerfilId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+            <button onClick={async () => { if (await confirmarEliminacion("este perfil")) eliminar.mutate(p.PerfilId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
               <Trash2 size={15} />
             </button>
           </>

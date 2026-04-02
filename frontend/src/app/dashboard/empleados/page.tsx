@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Loader2, Users, AlertCircle, Download } from "luc
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "@/components/DataTable";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 
 export default function EmpleadosPage() {
   const [page, setPage] = useState(0);
@@ -53,6 +54,7 @@ export default function EmpleadosPage() {
         await crear.mutateAsync(form);
       }
       setModal(false);
+      mostrarExito(editando ? "Empleado actualizado" : "Empleado creado");
     } catch (err: any) {
       setError(err.message || "Error al guardar");
       setTimeout(() => setError(""), 5000);
@@ -133,7 +135,7 @@ export default function EmpleadosPage() {
             <button onClick={() => abrirEditar(e)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
               <Pencil size={15} />
             </button>
-            <button onClick={() => { if (confirm("¿Eliminar este empleado?")) eliminar.mutate(e.EmpleadoId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+            <button onClick={async () => { if (await confirmarEliminacion("este empleado")) eliminar.mutate(e.EmpleadoId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
               <Trash2 size={15} />
             </button>
           </>

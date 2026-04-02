@@ -14,6 +14,7 @@ import AlumnoPicker from "@/components/AlumnoPicker";
 import { Plus, Pencil, Trash2, Loader2, ClipboardList, Search, FilterX, Download } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 
 export default function RegistrosPage() {
   const [fechaDesde, setFechaDesde] = useState("");
@@ -113,13 +114,18 @@ export default function RegistrosPage() {
   }
 
   async function guardar() {
-    const data = { ...form, AlumnoId: form.AlumnoId || undefined };
-    if (editando) {
-      await actualizar.mutateAsync({ id: editando.RegistroId, ...data });
-    } else {
-      await crear.mutateAsync(data as any);
+    try {
+      const data = { ...form, AlumnoId: form.AlumnoId || undefined };
+      if (editando) {
+        await actualizar.mutateAsync({ id: editando.RegistroId, ...data });
+      } else {
+        await crear.mutateAsync(data as any);
+      }
+      setModal(false);
+      mostrarExito(editando ? "Registro actualizado" : "Registro creado");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al guardar");
     }
-    setModal(false);
   }
 
   return (
@@ -273,7 +279,7 @@ export default function RegistrosPage() {
             <button onClick={() => abrirEditar(r)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
               <Pencil size={15} />
             </button>
-            <button onClick={() => { if (confirm("¿Eliminar este registro?")) eliminar.mutate(r.RegistroId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+            <button onClick={async () => { if (await confirmarEliminacion("este registro")) eliminar.mutate(r.RegistroId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
               <Trash2 size={15} />
             </button>
           </>

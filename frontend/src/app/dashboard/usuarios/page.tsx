@@ -15,6 +15,7 @@ import { Plus, Pencil, Trash2, Loader2, UserCog, Shield, Download } from "lucide
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "@/components/DataTable";
+import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
 
 export default function UsuariosPage() {
   const [page, setPage] = useState(0);
@@ -86,25 +87,35 @@ export default function UsuariosPage() {
   }
 
   async function guardarPerfiles() {
-    if (usuarioPerfiles) {
-      await asignarPerfiles.mutateAsync({ id: usuarioPerfiles, perfiles: perfilesSeleccionados });
+    try {
+      if (usuarioPerfiles) {
+        await asignarPerfiles.mutateAsync({ id: usuarioPerfiles, perfiles: perfilesSeleccionados });
+      }
+      setModalPerfiles(false);
+      setUsuarioPerfiles(null);
+      mostrarExito("Perfiles asignados");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al asignar perfiles");
     }
-    setModalPerfiles(false);
-    setUsuarioPerfiles(null);
   }
 
   async function guardar() {
-    if (editando) {
-      const { UsuarioId, UsuarioContrasena, ...data } = form;
-      await actualizar.mutateAsync({
-        id: editando.UsuarioId,
-        ...data,
-        ...(UsuarioContrasena ? { UsuarioContrasena } : {}),
-      });
-    } else {
-      await crear.mutateAsync(form);
+    try {
+      if (editando) {
+        const { UsuarioId, UsuarioContrasena, ...data } = form;
+        await actualizar.mutateAsync({
+          id: editando.UsuarioId,
+          ...data,
+          ...(UsuarioContrasena ? { UsuarioContrasena } : {}),
+        });
+      } else {
+        await crear.mutateAsync(form);
+      }
+      setModal(false);
+      mostrarExito(editando ? "Usuario actualizado" : "Usuario creado");
+    } catch (err: any) {
+      mostrarError(err.message || "Error al guardar");
     }
-    setModal(false);
   }
 
   return (
@@ -204,7 +215,7 @@ export default function UsuariosPage() {
             <button onClick={() => abrirEditar(u)} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
               <Pencil size={15} />
             </button>
-            <button onClick={() => { if (confirm("¿Eliminar este usuario?")) eliminar.mutate(u.UsuarioId); }} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+            <button onClick={async () => { if (await confirmarEliminacion("este usuario")) eliminar.mutate(u.UsuarioId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
               <Trash2 size={15} />
             </button>
           </>
