@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { formatFecha, formatMiles } from "./format";
+import { LOGO_MEMBRETE } from "./logo-membrete";
 
 const MESES = [
   "",
@@ -153,7 +154,6 @@ function dibujarRecibo(
   const right = 198;
   const boxW = right - left;
   const boxH = 128;
-  const headerCenterX = 75; // centro del area izquierda (entre left y el recuadro)
   const reciboCenterX = 170; // centro del recuadro derecho
   const valueCol = 58; // columna donde empiezan los valores de los campos
 
@@ -162,17 +162,13 @@ function dibujarRecibo(
   doc.setLineWidth(0.5);
   doc.rect(left, y, boxW, boxH);
 
-  // ── Header izquierdo: nombre de la escuela ──
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text('Escuela Nro. 3567 y Colegio Privado', headerCenterX, y + 10, { align: "center" });
-  doc.text('"Juan Crisóstomo Centurión S.R.L."', headerCenterX, y + 16, { align: "center" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
-  doc.text("Enseñanza Pre Escolar, Primaria - Enseñanza Secundaria de", headerCenterX, y + 21, { align: "center" });
-  doc.text("Formación General - Guardería y Jardín Maternal", headerCenterX, y + 25, { align: "center" });
-  doc.text("Defensores del Chaco c/Caballero Alvarez - Telef: (0224) 220 281 - Itaugua - Paraguay", headerCenterX, y + 29, { align: "center" });
+  // ── Header: imagen del membrete ──
+  // Imagen original 1134x347 (ratio 3.27:1), escalar para que ocupe el header
+  const imgH = 28;
+  const imgW = imgH * (1134 / 347); // ~91mm
+  const imgX = left + 2;
+  const imgY = y + 2;
+  doc.addImage(LOGO_MEMBRETE, "PNG", imgX, imgY, imgW, imgH);
 
   // ── Recuadro derecho: RECIBO DE SALARIO ──
   doc.setLineWidth(0.4);
