@@ -28,7 +28,7 @@ export default function PagosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [sortBy, setSortBy] = useState<string | undefined>("PagoEmpleadoFecha");
+  const [sortBy, setSortBy] = useState<string | undefined>("PagoEmpleadoNroRecibo");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { data: resp, isLoading } = usePagos({
     fechaDesde: fechaDesde || undefined,
@@ -177,6 +177,7 @@ export default function PagosPage() {
           setPage(0);
         }}
         columns={[
+          { header: "Nro. Recibo", sortKey: "PagoEmpleadoNroRecibo", render: (p) => formatMiles(p.PagoEmpleadoNroRecibo) },
           { header: "Fecha", sortKey: "PagoEmpleadoFecha", render: (p) => formatFecha(p.PagoEmpleadoFecha) },
           { header: "Empleado", sortKey: "EmpleadoApellido", render: (p) => `${p.EmpleadoNombre} ${p.EmpleadoApellido}` },
           { header: "Monto", sortKey: "PagoEmpleadoEntregaMonto", render: (p) => formatGuaranies(p.PagoEmpleadoEntregaMonto) },
@@ -184,7 +185,7 @@ export default function PagosPage() {
         mobileCard={(p) => (
           <>
             <p className="font-medium text-gray-900">{p.EmpleadoNombre} {p.EmpleadoApellido}</p>
-            <p className="mt-1 text-sm text-gray-500">{formatFecha(p.PagoEmpleadoFecha)}</p>
+            <p className="mt-1 text-sm text-gray-500">{formatFecha(p.PagoEmpleadoFecha)} — Recibo Nro. {formatMiles(p.PagoEmpleadoNroRecibo)}</p>
             <p className="mt-1 text-sm font-medium text-gray-700">{formatGuaranies(p.PagoEmpleadoEntregaMonto)}</p>
           </>
         )}
