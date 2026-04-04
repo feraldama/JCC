@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { GraduationCap, User, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { GraduationCap, User, Lock, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [contrasena, setContrasena] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const usuarioRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -76,13 +77,21 @@ export default function LoginPage() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={contrasena}
                 onChange={(e) => setContrasena(e.target.value)}
                 placeholder="Ingrese su contraseña"
-                className="w-full rounded-lg border border-gray-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-200 bg-slate-50 py-2.5 pl-10 pr-10 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 

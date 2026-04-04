@@ -1,5 +1,6 @@
 import { Router, Response } from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { pool } from "../config/db";
 import { AuthRequest, authMiddleware } from "../middleware/auth";
 
@@ -16,11 +17,17 @@ router.post("/login", async (req: AuthRequest, res: Response) => {
   }
 
   const userResult = await pool.query(
-    'SELECT "UsuarioId", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado" FROM usuario WHERE "UsuarioId" = $1 AND "UsuarioContrasena" = $2',
-    [UsuarioId, Contrasena]
+    'SELECT "UsuarioId", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado", "UsuarioContrasena" FROM usuario WHERE "UsuarioId" = $1',
+    [UsuarioId]
   );
 
   if (userResult.rows.length === 0) {
+    res.status(401).json({ error: "Credenciales incorrectas" });
+    return;
+  }
+
+  const valid = await bcrypt.compare(Contrasena, userResult.rows[0].UsuarioContrasena);
+  if (!valid) {
     res.status(401).json({ error: "Credenciales incorrectas" });
     return;
   }

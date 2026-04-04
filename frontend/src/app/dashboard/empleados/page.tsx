@@ -78,7 +78,7 @@ export default function EmpleadosPage() {
                 { header: "CI", value: (e) => e.EmpleadoCI },
                 { header: "Nombre", value: (e) => e.EmpleadoNombre },
                 { header: "Apellido", value: (e) => e.EmpleadoApellido },
-                { header: "Monto Cobro", value: (e) => e.EmpleadoCobroMonto },
+                { header: "Monto Cobro", value: (e) => e.EmpleadoCobroMonto, type: "money" },
               ],
               "Empleados"
             )}

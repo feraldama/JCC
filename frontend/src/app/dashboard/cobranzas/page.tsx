@@ -129,10 +129,10 @@ export default function CobranzasPage() {
                 { header: "Alumno", value: (c) => `${c.AlumnoNombre} ${c.AlumnoApellido}` },
                 { header: "Curso", value: (c) => c.CursoNombre ?? "" },
                 { header: "Mes Pagado", value: (c) => c.CobranzaMesPagado },
-                { header: "Subtotal", value: (c) => Number(c.CobranzaSubtotalCuota) },
-                { header: "Adicional", value: (c) => Number(c.CobranzaExamen) },
-                { header: "Descuento", value: (c) => Number(c.CobranzaDescuento) },
-                { header: "Total", value: (c) => Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento) },
+                { header: "Subtotal", value: (c) => Number(c.CobranzaSubtotalCuota), type: "money" },
+                { header: "Adicional", value: (c) => Number(c.CobranzaExamen), type: "money" },
+                { header: "Descuento", value: (c) => Number(c.CobranzaDescuento), type: "money" },
+                { header: "Total", value: (c) => Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento), type: "money" },
               ],
               "Cobranzas"
             )}

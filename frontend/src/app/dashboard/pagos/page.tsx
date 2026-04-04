@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { usePagos, useCrearPago, useEliminarPago, type Pago } from "@/hooks/usePagos";
 import { useEmpleados } from "@/hooks/useEmpleados";
 import { useAuth } from "@/lib/auth";
 import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import DataTable from "@/components/DataTable";
-import { Plus, Trash2, Loader2, Wallet, Search, FilterX, Download } from "lucide-react";
+import { Plus, Trash2, Loader2, Wallet, Search, FilterX, Download, ChevronDown, X } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
@@ -41,10 +41,31 @@ export default function PagosPage() {
     sortDir: sortBy ? sortDir : undefined,
   });
   const pagos = resp?.data;
-  const { data: empleadosResp } = useEmpleados({ limit: 100 });
+  const { data: empleadosResp } = useEmpleados({ limit: 100, sortBy: "EmpleadoNombre", sortDir: "asc" });
   const empleados = empleadosResp?.data;
   const crear = useCrearPago();
   const eliminar = useEliminarPago();
+
+  // Combobox empleado en modal
+  const [empleadoQuery, setEmpleadoQuery] = useState("");
+  const [empleadoOpen, setEmpleadoOpen] = useState(false);
+  const empleadoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (empleadoRef.current && !empleadoRef.current.contains(e.target as Node)) {
+        setEmpleadoOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const empleadoSeleccionado = empleados?.find((e) => e.EmpleadoId === form.EmpleadoId);
+  const empleadosFiltrados = empleados?.filter((e) => {
+    const texto = `${e.EmpleadoNombre} ${e.EmpleadoApellido}`.toLowerCase();
+    return texto.includes(empleadoQuery.toLowerCase());
+  });
 
   async function guardar() {
     try {
@@ -72,8 +93,8 @@ export default function PagosPage() {
               [
                 { header: "Fecha", value: (p) => formatFecha(p.PagoEmpleadoFecha) },
                 { header: "Empleado", value: (p) => `${p.EmpleadoNombre} ${p.EmpleadoApellido}` },
-                { header: "Monto Entrega", value: (p) => p.PagoEmpleadoEntregaMonto },
-                { header: "Monto Saldo", value: (p) => p.PagoEmpleadoSaldoMonto },
+                { header: "Monto Entrega", value: (p) => p.PagoEmpleadoEntregaMonto, type: "money" },
+                { header: "Monto Saldo", value: (p) => p.PagoEmpleadoSaldoMonto, type: "money" },
               ],
               "Pagos"
             )}
@@ -83,7 +104,7 @@ export default function PagosPage() {
             Exportar
           </button>
           <button
-            onClick={() => { setForm({ PagoEmpleadoFecha: "", EmpleadoId: 0, PagoEmpleadoEntregaMonto: 0, PagoEmpleadoSaldoMonto: 0, PagoEmpleadoNroRecibo: 0 }); setModal(true); }}
+            onClick={() => { setForm({ PagoEmpleadoFecha: new Date().toISOString().split("T")[0], EmpleadoId: 0, PagoEmpleadoEntregaMonto: 0, PagoEmpleadoSaldoMonto: 0, PagoEmpleadoNroRecibo: 0 }); setEmpleadoQuery(""); setEmpleadoOpen(false); setModal(true); }}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
           >
             <Plus size={18} />
@@ -190,18 +211,49 @@ export default function PagosPage() {
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
-            <div>
+            <div ref={empleadoRef} className="relative">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Empleado</label>
-              <select
-                value={form.EmpleadoId}
-                onChange={(e) => setForm({ ...form, EmpleadoId: Number(e.target.value) })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
-                <option value={0}>Seleccionar empleado</option>
-                {empleados?.map((e) => (
-                  <option key={e.EmpleadoId} value={e.EmpleadoId}>{e.EmpleadoNombre} {e.EmpleadoApellido}</option>
-                ))}
-              </select>
+              {empleadoSeleccionado ? (
+                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm">
+                  <span>{empleadoSeleccionado.EmpleadoNombre} {empleadoSeleccionado.EmpleadoApellido}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setForm({ ...form, EmpleadoId: 0 }); setEmpleadoQuery(""); }}
+                    className="cursor-pointer rounded p-0.5 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Buscar empleado..."
+                    value={empleadoQuery}
+                    onChange={(e) => { setEmpleadoQuery(e.target.value); setEmpleadoOpen(true); }}
+                    onFocus={() => setEmpleadoOpen(true)}
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 pr-8 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              )}
+              {empleadoOpen && !empleadoSeleccionado && (
+                <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  {empleadosFiltrados?.length ? (
+                    empleadosFiltrados.map((e) => (
+                      <li
+                        key={e.EmpleadoId}
+                        onClick={() => { setForm({ ...form, EmpleadoId: e.EmpleadoId }); setEmpleadoOpen(false); setEmpleadoQuery(""); }}
+                        className="cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        {e.EmpleadoNombre} {e.EmpleadoApellido}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-3 py-2 text-sm text-gray-400">Sin resultados</li>
+                  )}
+                </ul>
+              )}
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Monto Entrega</label>

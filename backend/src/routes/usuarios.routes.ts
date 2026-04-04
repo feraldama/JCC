@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import { pool } from "../config/db";
 import { buildOrderBy } from "../utils/sorting";
 
@@ -38,10 +39,11 @@ router.get("/", async (req: Request, res: Response) => {
 // POST / - crear usuario
 router.post("/", async (req: Request, res: Response) => {
   const { UsuarioId, UsuarioContrasena, UsuarioNombre, UsuarioApellido, UsuarioCorreo, UsuarioIsAdmin, UsuarioEstado } = req.body;
+  const hashedPassword = await bcrypt.hash(UsuarioContrasena, 10);
   const result = await pool.query(
     `INSERT INTO usuario ("UsuarioId", "UsuarioContrasena", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado")
      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "UsuarioId", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado"`,
-    [UsuarioId, UsuarioContrasena, UsuarioNombre, UsuarioApellido, UsuarioCorreo, UsuarioIsAdmin, UsuarioEstado]
+    [UsuarioId, hashedPassword, UsuarioNombre, UsuarioApellido, UsuarioCorreo, UsuarioIsAdmin, UsuarioEstado]
   );
   res.status(201).json(result.rows[0]);
 });
@@ -128,11 +130,12 @@ router.put("/:id", async (req: Request, res: Response) => {
 
   let result;
   if (UsuarioContrasena) {
+    const hashedPassword = await bcrypt.hash(UsuarioContrasena, 10);
     result = await pool.query(
       `UPDATE usuario SET "UsuarioContrasena" = $1, "UsuarioNombre" = $2, "UsuarioApellido" = $3, "UsuarioCorreo" = $4, "UsuarioIsAdmin" = $5, "UsuarioEstado" = $6
        WHERE "UsuarioId" = $7
        RETURNING "UsuarioId", "UsuarioNombre", "UsuarioApellido", "UsuarioCorreo", "UsuarioIsAdmin", "UsuarioEstado"`,
-      [UsuarioContrasena, UsuarioNombre, UsuarioApellido, UsuarioCorreo, UsuarioIsAdmin, UsuarioEstado, req.params.id]
+      [hashedPassword, UsuarioNombre, UsuarioApellido, UsuarioCorreo, UsuarioIsAdmin, UsuarioEstado, req.params.id]
     );
   } else {
     result = await pool.query(

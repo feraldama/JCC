@@ -74,7 +74,7 @@ export default function CursosPage() {
               { busqueda: busqueda || undefined, sortBy, sortDir: sortBy ? sortDir : undefined },
               [
                 { header: "Nombre", value: (c) => c.CursoNombre },
-                { header: "Importe", value: (c) => c.CursoImporte },
+                { header: "Importe", value: (c) => c.CursoImporte, type: "money" },
               ],
               "Cursos"
             )}

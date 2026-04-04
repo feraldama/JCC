@@ -130,7 +130,7 @@ model registro {
 
 model usuario {
   UsuarioId         String          @id @db.VarChar(12)
-  UsuarioContrasena String          @db.VarChar(20)
+  UsuarioContrasena String          @db.VarChar(60)
   UsuarioNombre     String          @db.VarChar(30)
   UsuarioApellido   String          @db.VarChar(30)
   UsuarioCorreo     String          @db.VarChar(100)

@@ -11,7 +11,7 @@ import {
   type Usuario,
 } from "@/hooks/useUsuarios";
 import { usePerfiles } from "@/hooks/usePerfiles";
-import { Plus, Pencil, Trash2, Loader2, UserCog, Shield, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, UserCog, Shield, Download, Eye, EyeOff } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import DataTable from "@/components/DataTable";
@@ -38,6 +38,7 @@ export default function UsuariosPage() {
   const todosPerfiles = todosPerfilesResp?.data;
   const { data: perfilesAsignados } = usePerfilesUsuario(usuarioPerfiles);
   const asignarPerfiles = useAsignarPerfiles();
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     UsuarioId: "",
     UsuarioNombre: "",
@@ -51,6 +52,7 @@ export default function UsuariosPage() {
   function abrirCrear() {
     setEditando(null);
     setForm({ UsuarioId: "", UsuarioNombre: "", UsuarioApellido: "", UsuarioCorreo: "", UsuarioIsAdmin: "N", UsuarioEstado: "A", UsuarioContrasena: "" });
+    setShowPassword(false);
     setModal(true);
   }
 
@@ -65,6 +67,7 @@ export default function UsuariosPage() {
       UsuarioEstado: u.UsuarioEstado,
       UsuarioContrasena: "",
     });
+    setShowPassword(false);
     setModal(true);
   }
 
@@ -267,12 +270,22 @@ export default function UsuariosPage() {
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Contraseña {editando && "(vacío = no cambiar)"}
               </label>
-              <input
-                type="password"
-                value={form.UsuarioContrasena}
-                onChange={(e) => setForm({ ...form, UsuarioContrasena: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.UsuarioContrasena}
+                  onChange={(e) => setForm({ ...form, UsuarioContrasena: e.target.value })}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 pr-10 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Rol</label>
