@@ -153,9 +153,8 @@ function dibujarRecibo(
   const left = 12;
   const right = 198;
   const boxW = right - left;
-  const boxH = 128;
+  const boxH = 133;
   const reciboCenterX = 170; // centro del recuadro derecho
-  const valueCol = 58; // columna donde empiezan los valores de los campos
 
   // Marco exterior
   doc.setDrawColor(0);
@@ -189,42 +188,31 @@ function dibujarRecibo(
   const dataLeft = left + 5;
   let ly = y + 42;
   const lineH = 6.5;
+  const gap = 3; // espacio entre label y valor
 
   doc.setFontSize(9);
 
-  // Fecha
-  doc.setFont("helvetica", "bold");
-  doc.text("Fecha:", dataLeft, ly);
-  doc.setFont("helvetica", "normal");
-  doc.text(formatFecha(data.fecha), valueCol, ly);
+  function campo(label: string, valor: string) {
+    doc.setFont("helvetica", "bold");
+    doc.text(label, dataLeft, ly);
+    const labelW = doc.getTextWidth(label);
+    doc.setFont("helvetica", "normal");
+    doc.text(valor, dataLeft + labelW + gap, ly);
+  }
 
-  // Empleador
-  ly += lineH;
-  doc.setFont("helvetica", "bold");
-  doc.text("Empleador:", dataLeft, ly);
-  doc.setFont("helvetica", "normal");
-  doc.text('Escuela Nro. 3567 y Colegio Privado "Juan Crisóstomo Centurión" S.R.L.', valueCol, ly);
+  campo("Fecha:  ", formatFecha(data.fecha));
 
-  // Nombre y Apellido
   ly += lineH;
-  doc.setFont("helvetica", "bold");
-  doc.text("Nombre y Apellido del Empleado:", dataLeft, ly);
-  doc.setFont("helvetica", "normal");
-  doc.text(`${data.empleadoNombre} ${data.empleadoApellido}`, dataLeft + 73, ly);
+  campo("Empleador:  ", 'Escuela Nro. 3567 y Colegio Privado "Juan Crisóstomo Centurión" S.R.L.');
 
-  // Cedula
   ly += lineH;
-  doc.setFont("helvetica", "bold");
-  doc.text("Cédula de Identidad Nro.:", dataLeft, ly);
-  doc.setFont("helvetica", "normal");
-  doc.text(formatMiles(Number(data.empleadoCI) || 0), valueCol, ly);
+  campo("Nombre y Apellido del Empleado:  ", `${data.empleadoNombre} ${data.empleadoApellido}`);
 
-  // Periodo
   ly += lineH;
-  doc.setFont("helvetica", "bold");
-  doc.text("Período de Pago:", dataLeft, ly);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Mes de ${MESES[data.mes]}`, valueCol, ly);
+  campo("Cédula de Identidad Nro.:  ", formatMiles(Number(data.empleadoCI) || 0));
+
+  ly += lineH;
+  campo("Período de Pago:  ", `Mes de ${MESES[data.mes]}`);
 
   // ── Tabla de montos ──
   ly += 11;
@@ -256,22 +244,27 @@ function dibujarRecibo(
   doc.text(`Son guaraníes: ${numeroALetras(data.saldoCobrar)}`, centerPage, ly, { align: "center" });
 
   // ── Firmas ──
-  const firmaLeft = left + 25;
-  const firmaRight = right - 25;
-  const firmaW = 55;
-  ly += 14;
+  // Posicionar las dos firmas dentro del marco con márgenes seguros
+  const firmaLineW = 60;
+  const firmaLeftX1 = left + 15;
+  const firmaLeftX2 = firmaLeftX1 + firmaLineW;
+  const firmaLeftCenter = firmaLeftX1 + firmaLineW / 2;
+  const firmaRightX1 = right - 15 - firmaLineW;
+  const firmaRightX2 = right - 15;
+  const firmaRightCenter = firmaRightX1 + firmaLineW / 2;
 
+  ly += 14;
   doc.setLineWidth(0.3);
-  doc.line(firmaLeft - firmaW / 2, ly, firmaLeft + firmaW / 2, ly);
-  doc.line(firmaRight - firmaW / 2, ly, firmaRight + firmaW / 2, ly);
+  doc.line(firmaLeftX1, ly, firmaLeftX2, ly);
+  doc.line(firmaRightX1, ly, firmaRightX2, ly);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("Firma", firmaLeft, ly + 5, { align: "center" });
-  doc.text("Firma Empleador", firmaRight, ly + 5, { align: "center" });
+  doc.text("Firma", firmaLeftCenter, ly + 5, { align: "center" });
+  doc.text("Firma Empleador", firmaRightCenter, ly + 5, { align: "center" });
 
-  doc.text("C.I.Nro. ...........................", firmaLeft - firmaW / 2, ly + 11);
-  doc.text("Autorizado por la Institución", firmaRight, ly + 11, { align: "center" });
+  doc.text("C.I.Nro. ...........................", firmaLeftX1, ly + 11);
+  doc.text("Autorizado por la Institución", firmaRightCenter, ly + 11, { align: "center" });
 
   // Tipo (Original / Duplicado)
   doc.setFont("helvetica", "bold");
@@ -281,7 +274,7 @@ function dibujarRecibo(
   } else {
     doc.setTextColor(0, 0, 255);
   }
-  doc.text(tipo, firmaRight, ly + 18, { align: "center" });
+  doc.text(tipo, firmaRightCenter, ly + 17, { align: "center" });
   doc.setTextColor(0, 0, 0);
 }
 
@@ -289,10 +282,10 @@ export function generarReciboSalario(data: ReciboData) {
   const doc = new jsPDF("p", "mm", "a4");
 
   // Original (parte superior)
-  dibujarRecibo(doc, data, 15, "Original");
+  dibujarRecibo(doc, data, 10, "Original");
 
   // Duplicado (parte inferior)
-  dibujarRecibo(doc, data, 150, "Duplicado");
+  dibujarRecibo(doc, data, 148, "Duplicado");
 
   doc.save(`Recibo_Salario_${data.nroRecibo}.pdf`);
 }

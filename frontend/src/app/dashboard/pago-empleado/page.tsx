@@ -124,8 +124,8 @@ export default function PagoEmpleadoPage() {
         empleadoCI: empleadoSeleccionado!.EmpleadoCI,
         mes,
         salarioTotal: pagosResp?.salarioTotal ?? 0,
-        descuentos: (pagosResp?.totalEntregado ?? 0) + montoPagar,
-        saldoCobrar: nuevoSaldo,
+        descuentos: pagosResp?.totalEntregado ?? 0,
+        saldoCobrar: montoPagar,
       });
       setMontoPagar(0);
       mostrarExito("Pago registrado");
@@ -136,6 +136,9 @@ export default function PagoEmpleadoPage() {
 
   function reimprimir(pago: Pago) {
     if (!empleadoSeleccionado) return;
+    const salario = pagosResp?.salarioTotal ?? 0;
+    const entrega = Number(pago.PagoEmpleadoEntregaMonto);
+    const saldo = Number(pago.PagoEmpleadoSaldoMonto);
     generarReciboSalario({
       nroRecibo: pago.PagoEmpleadoNroRecibo,
       fecha: pago.PagoEmpleadoFecha,
@@ -143,9 +146,9 @@ export default function PagoEmpleadoPage() {
       empleadoApellido: empleadoSeleccionado.EmpleadoApellido,
       empleadoCI: empleadoSeleccionado.EmpleadoCI,
       mes,
-      salarioTotal: pagosResp?.salarioTotal ?? 0,
-      descuentos: Number(pago.PagoEmpleadoEntregaMonto),
-      saldoCobrar: Number(pago.PagoEmpleadoSaldoMonto),
+      salarioTotal: salario,
+      descuentos: salario - entrega - saldo,
+      saldoCobrar: entrega,
     });
   }
 
