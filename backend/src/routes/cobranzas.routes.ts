@@ -46,6 +46,7 @@ router.get("/", async (req: Request, res: Response) => {
     CobranzaMes: 'co."CobranzaMes"',
     CobranzaNroComprobante: 'co."CobranzaNroComprobante"',
     CobranzaSubtotalCuota: 'co."CobranzaSubtotalCuota"',
+    CobranzaExamen: 'co."CobranzaExamen"',
   }, 'co."CobranzaId" DESC');
   const result = await pool.query(
     `SELECT co.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI", c."CursoNombre", u."UsuarioNombre", u."UsuarioApellido" ${baseFrom} ${orderBy} LIMIT $${i} OFFSET $${i + 1}`,

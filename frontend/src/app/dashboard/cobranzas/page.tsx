@@ -231,6 +231,7 @@ export default function CobranzasPage() {
           { header: "Curso", sortKey: "CursoNombre", render: (c) => c.CursoNombre },
           { header: "Mes Pagado", sortKey: "CobranzaMes", render: (c) => c.CobranzaMesPagado },
           { header: "Subtotal", sortKey: "CobranzaSubtotalCuota", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota)) },
+          { header: "Adicional", sortKey: "CobranzaExamen", render: (c) => formatGuaranies(Number(c.CobranzaExamen)) },
           { header: "Total", render: (c) => formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento)), className: "px-4 py-3.5 text-sm font-medium text-gray-900" },
         ]}
         mobileCard={(c) => (
@@ -267,9 +268,10 @@ export default function CobranzasPage() {
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Nro Comprobante</label>
               <input
-                type="number"
-                value={form.CobranzaNroComprobante}
-                onChange={(e) => setForm({ ...form, CobranzaNroComprobante: Number(e.target.value) })}
+                type="text"
+                inputMode="numeric"
+                value={form.CobranzaNroComprobante || ""}
+                onChange={(e) => setForm({ ...form, CobranzaNroComprobante: Number(e.target.value.replace(/\D/g, "")) || 0 })}
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
