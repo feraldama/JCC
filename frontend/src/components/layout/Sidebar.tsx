@@ -11,6 +11,7 @@ import {
   FileText,
   Users,
   Wallet,
+  HandCoins,
   ClipboardList,
   UserCog,
   Shield,
@@ -19,18 +20,56 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const menuRoutes: Record<string, { path: string; label: string; icon: LucideIcon }> = {
-  cursos: { path: "/dashboard/cursos", label: "Cursos", icon: BookOpen },
-  alumnos: { path: "/dashboard/alumnos", label: "Alumnos", icon: GraduationCap },
-  cobranzas: { path: "/dashboard/cobranzas", label: "Cobranzas", icon: Receipt },
-  "estado-cuenta": { path: "/dashboard/estado-cuenta", label: "Estado de Cuenta", icon: ClipboardList },
-  facturas: { path: "/dashboard/facturas", label: "Facturas", icon: FileText },
-  empleados: { path: "/dashboard/empleados", label: "Empleados", icon: Users },
-  pagos: { path: "/dashboard/pagos", label: "Pagos", icon: Wallet },
-  registros: { path: "/dashboard/registros", label: "Registros", icon: ClipboardList },
-  usuarios: { path: "/dashboard/usuarios", label: "Usuarios", icon: UserCog },
-  perfiles: { path: "/dashboard/perfiles", label: "Perfiles", icon: Shield },
-};
+interface MenuItem {
+  id: string;
+  path: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+}
+
+const menuGroups: MenuGroup[] = [
+  {
+    label: "Académico",
+    items: [
+      { id: "cursos", path: "/dashboard/cursos", label: "Cursos", icon: BookOpen },
+      { id: "alumnos", path: "/dashboard/alumnos", label: "Alumnos", icon: GraduationCap },
+    ],
+  },
+  {
+    label: "Cobranzas",
+    items: [
+      { id: "cobranzas", path: "/dashboard/cobranzas", label: "Cobranzas", icon: Receipt },
+      { id: "estado-cuenta", path: "/dashboard/estado-cuenta", label: "Estado de Cuenta", icon: ClipboardList },
+      { id: "facturas", path: "/dashboard/facturas", label: "Facturas", icon: FileText },
+    ],
+  },
+  {
+    label: "Personal",
+    items: [
+      { id: "empleados", path: "/dashboard/empleados", label: "Empleados", icon: Users },
+      { id: "pago-empleado", path: "/dashboard/pago-empleado", label: "Pago a Empleado", icon: HandCoins },
+      { id: "pagos", path: "/dashboard/pagos", label: "Historial Pagos", icon: Wallet },
+    ],
+  },
+  {
+    label: "Contable",
+    items: [
+      { id: "registros", path: "/dashboard/registros", label: "Registros", icon: ClipboardList },
+    ],
+  },
+  {
+    label: "Administración",
+    items: [
+      { id: "usuarios", path: "/dashboard/usuarios", label: "Usuarios", icon: UserCog },
+      { id: "perfiles", path: "/dashboard/perfiles", label: "Perfiles", icon: Shield },
+    ],
+  },
+];
 
 interface SidebarProps {
   isOpen: boolean;
@@ -42,9 +81,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   const isAdmin = usuario?.UsuarioIsAdmin === "S";
-  const navItems = isAdmin
-    ? Object.values(menuRoutes)
-    : menus.map((m) => menuRoutes[m.MenuId.toLowerCase()]).filter(Boolean);
+  const allowedIds = new Set(menus.map((m) => m.MenuId.toLowerCase()));
+
+  const visibleGroups = menuGroups
+    .map((group) => ({
+      ...group,
+      items: isAdmin
+        ? group.items
+        : group.items.filter((item) => allowedIds.has(item.id)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const initials =
     (usuario?.UsuarioNombre?.[0] ?? "") + (usuario?.UsuarioApellido?.[0] ?? "");
@@ -64,7 +110,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
         <button
           onClick={onClose}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden"
+          className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden"
         >
           <X className="h-5 w-5" />
         </button>
@@ -72,38 +118,47 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          Menú
-        </p>
+        {/* Dashboard link */}
         <Link
           href="/dashboard"
           onClick={onClose}
-          className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${pathname === "/dashboard"
+          className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+            pathname === "/dashboard"
               ? "border-l-3 border-blue-400 bg-white/15 text-white"
               : "text-slate-300 hover:bg-white/10 hover:text-white"
-            }`}
+          }`}
         >
           <LayoutDashboard className="h-[18px] w-[18px]" />
           Dashboard
         </Link>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname.startsWith(item.path);
-          return (
-            <Link
-              key={item.path}
-              href={item.path}
-              onClick={onClose}
-              className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${isActive
-                  ? "border-l-3 border-blue-400 bg-white/15 text-white"
-                  : "text-slate-300 hover:bg-white/10 hover:text-white"
-                }`}
-            >
-              <Icon className="h-[18px] w-[18px]" />
-              {item.label}
-            </Link>
-          );
-        })}
+
+        {/* Grouped menu items */}
+        {visibleGroups.map((group) => (
+          <div key={group.label} className="mt-4">
+            <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              {group.label}
+            </p>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname.startsWith(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={onClose}
+                  className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                    isActive
+                      ? "border-l-3 border-blue-400 bg-white/15 text-white"
+                      : "text-slate-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* User section */}
@@ -124,7 +179,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
           <button
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-700/60 px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+            className="cursor-pointer flex w-full items-center justify-center gap-2 rounded-lg bg-slate-700/60 px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión
@@ -138,15 +193,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
         onClick={onClose}
       />
 
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:hidden ${isOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         {sidebarContent}
       </div>

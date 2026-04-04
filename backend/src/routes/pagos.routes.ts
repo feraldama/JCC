@@ -51,6 +51,61 @@ router.get("/", async (req: Request, res: Response) => {
   res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
+// GET /empleado/:empleadoId - pagos de un empleado en un mes/año
+router.get("/empleado/:empleadoId", async (req: Request, res: Response) => {
+  const { empleadoId } = req.params;
+  const { mes, anio } = req.query;
+
+  if (!mes || !anio) {
+    res.status(400).json({ error: "Se requiere mes y anio" });
+    return;
+  }
+
+  const mesNum = Number(mes);
+  const anioNum = Number(anio);
+
+  // Rango de fechas del mes
+  const fechaDesde = `${anioNum}-${String(mesNum).padStart(2, "0")}-01`;
+  const ultimoDia = new Date(anioNum, mesNum, 0).getDate();
+  const fechaHasta = `${anioNum}-${String(mesNum).padStart(2, "0")}-${ultimoDia}`;
+
+  // Datos del empleado
+  const empResult = await pool.query('SELECT * FROM empleado WHERE "EmpleadoId" = $1', [empleadoId]);
+  if (empResult.rows.length === 0) {
+    res.status(404).json({ error: "Empleado no encontrado" });
+    return;
+  }
+  const empleado = empResult.rows[0];
+
+  // Pagos del mes
+  const pagosResult = await pool.query(
+    `SELECT p.*, u."UsuarioNombre", u."UsuarioApellido"
+     FROM pagoempleado p
+     JOIN usuario u ON p."UsuarioId" = u."UsuarioId"
+     WHERE p."EmpleadoId" = $1 AND p."PagoEmpleadoFecha" >= $2 AND p."PagoEmpleadoFecha" <= $3
+     ORDER BY p."PagoEmpleadoId" ASC`,
+    [empleadoId, fechaDesde, fechaHasta]
+  );
+
+  const salarioTotal = Number(empleado.EmpleadoCobroMonto);
+  const totalEntregado = pagosResult.rows.reduce((sum: number, p: any) => sum + Number(p.PagoEmpleadoEntregaMonto), 0);
+  const saldoTotal = salarioTotal - totalEntregado;
+
+  res.json({
+    empleado,
+    pagos: pagosResult.rows,
+    salarioTotal,
+    totalEntregado,
+    saldoTotal,
+  });
+});
+
+// GET /siguiente-recibo - obtener siguiente número de recibo
+router.get("/siguiente-recibo/next", async (_req: Request, res: Response) => {
+  const result = await pool.query('SELECT COALESCE(MAX("PagoEmpleadoNroRecibo"), 0) + 1 AS siguiente FROM pagoempleado');
+  res.json({ siguiente: Number(result.rows[0].siguiente) });
+});
+
 // GET /:id - obtener pago por id
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await pool.query(
