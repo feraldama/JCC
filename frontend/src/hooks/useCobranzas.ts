@@ -48,7 +48,7 @@ export function useCobranza(id: number | null) {
 }
 
 export function useUltimoComprobante(enabled: boolean) {
-  return useQuery<{ CobranzaNroComprobante: number; CobranzaTimbrado: number }>({
+  return useQuery<{ CobranzaNroComprobante: number; CobranzaTimbrado: number; FacturaDesde: number; FacturaHasta: number }>({
     queryKey: ["cobranzas", "ultimo-comprobante"],
     queryFn: () => api.get("/cobranzas/ultimo-comprobante"),
     enabled,

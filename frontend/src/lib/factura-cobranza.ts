@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { formatFecha, formatMiles } from "./format";
+import { numeroALetras } from "./recibo-salario";
 
 export interface FacturaData {
   nroComprobante: number;
@@ -59,6 +60,7 @@ const POS = {
   // Total a pagar (en guaraníes)
   totalY: 122,
   totalX: 175,
+  totalLetrasX: 55,  // posición X para el monto en letras
 
   // Liquidación IVA
   ivaY: 132,
@@ -138,6 +140,12 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
   const total = data.subtotalCuota + data.adicionalMonto - data.descuento;
   doc.setFont("helvetica", "bold");
   doc.text(formatMiles(total), POS.totalX, y(POS.totalY), { align: "right" });
+
+  // Total en letras
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text(numeroALetras(total), POS.totalLetrasX, y(POS.totalY));
+  doc.setFontSize(9);
 
   // Liquidación del IVA
   // Cuotas son exentas, adicionales llevan IVA 10%

@@ -74,7 +74,8 @@ router.get("/:id/estado-cuenta", async (req: Request, res: Response) => {
   const cobranzasResult = await pool.query(
     `SELECT "CobranzaId", "CobranzaFecha", "CobranzaMesPagado"
      FROM cobranza
-     WHERE "AlumnoId" = $1 AND EXTRACT(YEAR FROM "CobranzaFecha") = $2`,
+     WHERE "AlumnoId" = $1 AND EXTRACT(YEAR FROM "CobranzaFecha") = $2
+       AND "CobranzaEstado" = 'A'`,
     [req.params.id, year]
   );
 

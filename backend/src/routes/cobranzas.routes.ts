@@ -55,17 +55,34 @@ router.get("/", async (req: Request, res: Response) => {
   res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
-// GET /ultimo-comprobante - obtener último nro comprobante y timbrado
+// GET /ultimo-comprobante - obtener talonario vigente y último nro usado
 router.get("/ultimo-comprobante", async (_req: Request, res: Response) => {
-  const result = await pool.query(
-    `SELECT "CobranzaNroComprobante", "CobranzaTimbrado"
-     FROM cobranza ORDER BY "CobranzaNroComprobante" DESC LIMIT 1`
+  // Talonario vigente (último cargado en control de facturas)
+  const talonario = await pool.query(
+    `SELECT "FacturaTimbrado", "FacturaDesde", "FacturaHasta"
+     FROM factura ORDER BY "FacturaId" DESC LIMIT 1`
   );
-  if (result.rows.length === 0) {
-    res.json({ CobranzaNroComprobante: 0, CobranzaTimbrado: 0 });
+  if (talonario.rows.length === 0) {
+    res.status(400).json({ error: "No hay talonario de facturas configurado" });
     return;
   }
-  res.json(result.rows[0]);
+  const { FacturaTimbrado, FacturaDesde, FacturaHasta } = talonario.rows[0];
+
+  // Último nro de comprobante usado en cobranzas con ese timbrado
+  const ultimo = await pool.query(
+    `SELECT "CobranzaNroComprobante" FROM cobranza
+     WHERE "CobranzaTimbrado" = $1
+     ORDER BY "CobranzaNroComprobante" DESC LIMIT 1`,
+    [FacturaTimbrado]
+  );
+  const ultimoNro = ultimo.rows.length > 0 ? ultimo.rows[0].CobranzaNroComprobante : FacturaDesde - 1;
+
+  res.json({
+    CobranzaNroComprobante: ultimoNro,
+    CobranzaTimbrado: FacturaTimbrado,
+    FacturaDesde,
+    FacturaHasta,
+  });
 });
 
 // GET /:id - obtener cobranza por id
@@ -95,6 +112,22 @@ router.post("/", async (req: Request, res: Response) => {
     CobranzaDescuento, UsuarioId, CobranzaNroComprobante,
     CobranzaTimbrado, CobranzaFebrero, CobranzaAdicionalDetalle
   } = req.body;
+
+  // Validar que el nro comprobante esté dentro del rango del talonario
+  const talonario = await pool.query(
+    `SELECT "FacturaDesde", "FacturaHasta" FROM factura
+     WHERE "FacturaTimbrado" = $1 ORDER BY "FacturaId" DESC LIMIT 1`,
+    [CobranzaTimbrado]
+  );
+  if (talonario.rows.length === 0) {
+    res.status(400).json({ error: "Timbrado no encontrado en control de talonarios" });
+    return;
+  }
+  const { FacturaDesde, FacturaHasta } = talonario.rows[0];
+  if (CobranzaNroComprobante < FacturaDesde || CobranzaNroComprobante > FacturaHasta) {
+    res.status(400).json({ error: `Nro de comprobante fuera de rango. Rango válido: ${FacturaDesde} - ${FacturaHasta}` });
+    return;
+  }
 
   const result = await pool.query(
     `INSERT INTO cobranza (

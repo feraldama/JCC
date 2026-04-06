@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
-import type { Alumno } from "@/hooks/useAlumnos";
+import { useEstadoCuenta, type Alumno } from "@/hooks/useAlumnos";
 import { Plus, Ban, RotateCcw, Loader2, Receipt, Search, FilterX, Download, Printer } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -70,6 +70,9 @@ export default function CobranzasPage() {
   const crear = useCrearCobranza();
   const anular = useAnularCobranza();
   const { data: ultimoComprobante } = useUltimoComprobante(modal);
+  const anioActual = new Date().getFullYear();
+  const { data: estadoCuenta } = useEstadoCuenta(form.AlumnoId, anioActual);
+  const mesesPagados = new Set(estadoCuenta?.meses.filter((m) => m.pagado).map((m) => m.mes) ?? []);
 
   useEffect(() => {
     if (modal) setTimeout(() => fechaRef.current?.focus(), 50);
@@ -127,6 +130,10 @@ export default function CobranzasPage() {
   }
 
   async function guardar() {
+    if (ultimoComprobante && (form.CobranzaNroComprobante < ultimoComprobante.FacturaDesde || form.CobranzaNroComprobante > ultimoComprobante.FacturaHasta)) {
+      mostrarError(`Nro de comprobante fuera de rango (${formatMiles(ultimoComprobante.FacturaDesde)} - ${formatMiles(ultimoComprobante.FacturaHasta)})`);
+      return;
+    }
     try {
       await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
       setModal(false);
@@ -335,8 +342,17 @@ export default function CobranzasPage() {
                 inputMode="numeric"
                 value={form.CobranzaNroComprobante || ""}
                 onChange={(e) => setForm({ ...form, CobranzaNroComprobante: Number(e.target.value.replace(/\D/g, "")) || 0 })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className={`w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                  ultimoComprobante && (form.CobranzaNroComprobante < ultimoComprobante.FacturaDesde || form.CobranzaNroComprobante > ultimoComprobante.FacturaHasta)
+                    ? "border-red-300 bg-red-50 focus:border-red-500"
+                    : "border-gray-200 bg-gray-50 focus:border-blue-500 focus:bg-white"
+                }`}
               />
+              {ultimoComprobante && (
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Timbrado: <span className="font-medium">{formatMiles(ultimoComprobante.CobranzaTimbrado)}</span> — Rango: <span className="font-medium">{formatMiles(ultimoComprobante.FacturaDesde)} - {formatMiles(ultimoComprobante.FacturaHasta)}</span>
+                </p>
+              )}
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Alumno</label>
@@ -365,20 +381,29 @@ export default function CobranzasPage() {
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {MESES_CUOTA.map((mes) => {
                   const checked = mesesSeleccionados.includes(mes.num);
+                  const pagado = mesesPagados.has(mes.num);
                   return (
                     <label
                       key={mes.num}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${checked ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"}`}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                        pagado
+                          ? "cursor-not-allowed border-green-300 bg-green-50 text-green-700 opacity-70"
+                          : checked
+                            ? "cursor-pointer border-blue-500 bg-blue-50 text-blue-700"
+                            : "cursor-pointer border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                      }`}
                     >
                       <input
                         type="checkbox"
-                        checked={checked}
+                        checked={checked || pagado}
+                        disabled={pagado}
                         onChange={() => {
+                          if (pagado) return;
                           setMesesSeleccionados((prev) =>
                             checked ? prev.filter((m) => m !== mes.num) : [...prev, mes.num]
                           );
                         }}
-                        className="cursor-pointer accent-blue-600"
+                        className={pagado ? "accent-green-600" : "cursor-pointer accent-blue-600"}
                       />
                       {mes.abrev}
                       {mes.num === 2 && <span className="text-[10px] text-blue-500">(50%)</span>}

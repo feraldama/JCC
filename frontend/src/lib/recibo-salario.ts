@@ -18,7 +18,7 @@ const MESES = [
   "Diciembre",
 ];
 
-function numeroALetras(num: number): string {
+export function numeroALetras(num: number): string {
   const unidades = [
     "",
     "UN",
