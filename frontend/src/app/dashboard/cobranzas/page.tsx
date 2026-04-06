@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useCobranzas, useCrearCobranza, useEliminarCobranza, useUltimoComprobante, type Cobranza } from "@/hooks/useCobranzas";
+import { useCobranzas, useCrearCobranza, useAnularCobranza, useUltimoComprobante, type Cobranza } from "@/hooks/useCobranzas";
 import { useAuth } from "@/lib/auth";
 import { formatGuaranies, formatFecha, formatMiles, parseMiles } from "@/lib/format";
 import AlumnoPicker from "@/components/AlumnoPicker";
 import DataTable from "@/components/DataTable";
 import type { Alumno } from "@/hooks/useAlumnos";
-import { Plus, Trash2, Loader2, Receipt, Search, FilterX, Download } from "lucide-react";
+import { Plus, Ban, RotateCcw, Loader2, Receipt, Search, FilterX, Download, Printer } from "lucide-react";
 import { exportToExcel } from "@/lib/export";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { confirmarEliminacion, mostrarExito, mostrarError } from "@/lib/swal";
+import { confirmarAnulacion, mostrarExito, mostrarError } from "@/lib/swal";
+import { imprimirFactura, type FacturaData } from "@/lib/factura-cobranza";
 
 const MESES_CUOTA = [
   { num: 2, nombre: "FEBRERO", abrev: "FEB" },
@@ -67,7 +68,7 @@ export default function CobranzasPage() {
   });
   const cobranzas = resp?.data;
   const crear = useCrearCobranza();
-  const eliminar = useEliminarCobranza();
+  const anular = useAnularCobranza();
   const { data: ultimoComprobante } = useUltimoComprobante(modal);
 
   useEffect(() => {
@@ -99,11 +100,56 @@ export default function CobranzasPage() {
     }));
   }, [mesesSeleccionados, alumnoSeleccionado]);
 
+  function imprimirCobranza(c: Cobranza) {
+    const esFeb = c.CobranzaFebrero === "S";
+    const subtotal = Number(c.CobranzaSubtotalCuota);
+    const mesesNoFeb = c.CobranzaMes - (esFeb ? 1 : 0);
+    // Calcular importe cuota: subtotal = mesesNoFeb * importe + (esFeb ? importe/2 : 0)
+    const importeCuota = mesesNoFeb > 0 ? Math.round(subtotal / (mesesNoFeb + (esFeb ? 0.5 : 0))) : (esFeb ? subtotal * 2 : subtotal);
+    const data: FacturaData = {
+      nroComprobante: c.CobranzaNroComprobante,
+      timbrado: c.CobranzaTimbrado,
+      fecha: c.CobranzaFecha,
+      alumnoCI: c.AlumnoCI ?? "",
+      alumnoNombre: c.AlumnoNombre ?? "",
+      alumnoApellido: c.AlumnoApellido ?? "",
+      cursoNombre: c.CursoNombre ?? "",
+      mesPagado: c.CobranzaMesPagado,
+      cantMeses: c.CobranzaMes,
+      subtotalCuota: subtotal,
+      incluyeFebrero: esFeb,
+      importeCuota,
+      adicionalDetalle: c.CobranzaAdicionalDetalle,
+      adicionalMonto: Number(c.CobranzaExamen),
+      descuento: Number(c.CobranzaDescuento),
+    };
+    imprimirFactura(data);
+  }
+
   async function guardar() {
     try {
       await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
       setModal(false);
       mostrarExito("Cobranza registrada");
+      // Imprimir factura con los datos del formulario + alumno seleccionado
+      const data: FacturaData = {
+        nroComprobante: form.CobranzaNroComprobante,
+        timbrado: form.CobranzaTimbrado,
+        fecha: form.CobranzaFecha,
+        alumnoCI: alumnoSeleccionado?.AlumnoCI ?? "",
+        alumnoNombre: alumnoSeleccionado?.AlumnoNombre ?? "",
+        alumnoApellido: alumnoSeleccionado?.AlumnoApellido ?? "",
+        cursoNombre: alumnoSeleccionado?.CursoNombre ?? "",
+        mesPagado: form.CobranzaMesPagado,
+        cantMeses: form.CobranzaMes,
+        subtotalCuota: form.CobranzaSubtotalCuota,
+        incluyeFebrero: form.CobranzaFebrero === "S",
+        importeCuota: Number(alumnoSeleccionado?.CursoImporte ?? 0),
+        adicionalDetalle: form.CobranzaAdicionalDetalle,
+        adicionalMonto: form.CobranzaExamen,
+        descuento: form.CobranzaDescuento,
+      };
+      imprimirFactura(data);
     } catch (err: any) {
       mostrarError(err.message || "Error al guardar");
     }
@@ -236,15 +282,32 @@ export default function CobranzasPage() {
         ]}
         mobileCard={(c) => (
           <>
-            <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-gray-900">{c.AlumnoNombre} {c.AlumnoApellido}</p>
+              {c.CobranzaEstado === "X" && <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">ANULADO</span>}
+            </div>
             <p className="mt-1 text-sm text-gray-500">{formatFecha(c.CobranzaFecha)} - {c.CobranzaMesPagado}</p>
             <p className="mt-1 text-sm font-medium text-gray-700">Total: {formatGuaranies(Number(c.CobranzaSubtotalCuota) + Number(c.CobranzaExamen) - Number(c.CobranzaDescuento))}</p>
           </>
         )}
         actions={(c) => (
-          <button onClick={async () => { if (await confirmarEliminacion("esta cobranza")) eliminar.mutate(c.CobranzaId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
-            <Trash2 size={15} />
-          </button>
+          <div className="flex items-center gap-1">
+            {c.CobranzaEstado === "X" && (
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">ANULADO</span>
+            )}
+            <button onClick={() => imprimirCobranza(c)} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600" title="Imprimir factura">
+              <Printer size={15} />
+            </button>
+            {c.CobranzaEstado !== "X" ? (
+              <button onClick={async () => { if (await confirmarAnulacion("esta cobranza")) anular.mutate(c.CobranzaId); }} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600" title="Anular cobranza">
+                <Ban size={15} />
+              </button>
+            ) : (
+              <button onClick={() => anular.mutate(c.CobranzaId)} className="cursor-pointer rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600" title="Reactivar cobranza">
+                <RotateCcw size={15} />
+              </button>
+            )}
+          </div>
         )}
       />
 

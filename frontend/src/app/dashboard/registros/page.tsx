@@ -264,10 +264,14 @@ export default function RegistrosPage() {
           { header: "IVA 5%", render: (r) => formatGuaranies(r.RegistroIva5) },
           { header: "Total", sortKey: "RegistroTotal", render: (r) => formatGuaranies(r.RegistroTotal) },
           { header: "Alumno", sortKey: "AlumnoApellido", render: (r) => r.AlumnoNombre ? `${r.AlumnoNombre} ${r.AlumnoApellido}` : "-" },
+          { header: "Estado", render: (r) => r.RegistroEstado === "X" ? <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">ANULADO</span> : <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-600">ACTIVO</span> },
         ]}
         mobileCard={(r) => (
           <>
-            <p className="font-medium text-gray-900">{r.RegistroTipoRegistro}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-gray-900">{r.RegistroTipoRegistro}</p>
+              {r.RegistroEstado === "X" && <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">ANULADO</span>}
+            </div>
             <p className="mt-1 text-sm text-gray-500">{formatFecha(r.RegistroFecha)} - {formatGuaranies(r.RegistroTotal)}</p>
             {r.AlumnoNombre && (
               <p className="mt-1 text-sm text-gray-500">{r.AlumnoNombre} {r.AlumnoApellido}</p>

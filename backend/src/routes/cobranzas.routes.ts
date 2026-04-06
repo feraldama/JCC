@@ -72,9 +72,10 @@ router.get("/ultimo-comprobante", async (_req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await pool.query(
     `SELECT co.*, a."AlumnoNombre", a."AlumnoApellido", a."AlumnoCI",
-            u."UsuarioNombre", u."UsuarioApellido"
+            c."CursoNombre", u."UsuarioNombre", u."UsuarioApellido"
      FROM cobranza co
      JOIN alumno a ON co."AlumnoId" = a."AlumnoId"
+     JOIN curso c ON a."CursoId" = c."CursoId"
      JOIN usuario u ON co."UsuarioId" = u."UsuarioId"
      WHERE co."CobranzaId" = $1`,
     [req.params.id]
@@ -129,14 +130,34 @@ router.post("/", async (req: Request, res: Response) => {
   res.status(201).json(result.rows[0]);
 });
 
-// DELETE /:id - eliminar cobranza
-router.delete("/:id", async (req: Request, res: Response) => {
-  const result = await pool.query('DELETE FROM cobranza WHERE "CobranzaId" = $1 RETURNING *', [req.params.id]);
-  if (result.rows.length === 0) {
+// PUT /:id/anular - alternar estado de cobranza (A <-> X) y su registro asociado
+router.put("/:id/anular", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const cobranza = await pool.query(
+    'SELECT * FROM cobranza WHERE "CobranzaId" = $1',
+    [id]
+  );
+  if (cobranza.rows.length === 0) {
     res.status(404).json({ error: "Cobranza no encontrada" });
     return;
   }
-  res.json({ message: "Cobranza eliminada" });
+
+  const c = cobranza.rows[0];
+  const nuevoEstado = c.CobranzaEstado === "X" ? "A" : "X";
+  const nroComp = `001-001-${String(c.CobranzaNroComprobante).padStart(7, "0")}`;
+
+  await pool.query(
+    `UPDATE cobranza SET "CobranzaEstado" = $1 WHERE "CobranzaId" = $2`,
+    [nuevoEstado, id]
+  );
+
+  await pool.query(
+    `UPDATE registro SET "RegistroEstado" = $1 WHERE "RegistroNroComprobante" = $2 AND "AlumnoId" = $3`,
+    [nuevoEstado, nroComp, c.AlumnoId]
+  );
+
+  res.json({ message: nuevoEstado === "X" ? "Cobranza anulada" : "Cobranza reactivada" });
 });
 
 export default router;

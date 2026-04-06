@@ -36,6 +36,7 @@ model cobranza {
   CobranzaTimbrado         Int
   CobranzaFebrero          String   @db.VarChar(1)
   CobranzaAdicionalDetalle String   @db.VarChar(30)
+  CobranzaEstado           String   @default("A") @db.VarChar(1)
   usuario                  usuario  @relation(fields: [UsuarioId], references: [UsuarioId], onDelete: NoAction, onUpdate: NoAction, map: "ICOBRANZA1")
   alumno                   alumno   @relation(fields: [AlumnoId], references: [AlumnoId], onDelete: NoAction, onUpdate: NoAction, map: "ICOBRANZA2")
 
@@ -123,6 +124,7 @@ model registro {
   RegistroImputaIrp           String   @db.VarChar(1)
   RegistroComprobanteAsociado String   @db.VarChar(15)
   RegistroTimbradoAsociado    String   @db.VarChar(8)
+  RegistroEstado              String   @default("A") @db.VarChar(1)
   alumno                      alumno   @relation(fields: [AlumnoId], references: [AlumnoId], onDelete: NoAction, onUpdate: NoAction, map: "IREGISTRO1")
 
   @@index([AlumnoId], map: "idx_IREGISTRO1")

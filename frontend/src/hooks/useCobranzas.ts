@@ -17,6 +17,7 @@ export interface Cobranza {
   CobranzaTimbrado: number;
   CobranzaFebrero: string;
   CobranzaAdicionalDetalle: string;
+  CobranzaEstado: string;
   AlumnoNombre?: string;
   AlumnoApellido?: string;
   AlumnoCI?: string;
@@ -38,6 +39,14 @@ export function useCobranzas(filtros: FiltrosCobranzas = {}) {
   });
 }
 
+export function useCobranza(id: number | null) {
+  return useQuery<Cobranza>({
+    queryKey: ["cobranzas", id],
+    queryFn: () => api.get(`/cobranzas/${id}`),
+    enabled: id !== null && id > 0,
+  });
+}
+
 export function useUltimoComprobante(enabled: boolean) {
   return useQuery<{ CobranzaNroComprobante: number; CobranzaTimbrado: number }>({
     queryKey: ["cobranzas", "ultimo-comprobante"],
@@ -54,10 +63,10 @@ export function useCrearCobranza() {
   });
 }
 
-export function useEliminarCobranza() {
+export function useAnularCobranza() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => api.delete(`/cobranzas/${id}`),
+    mutationFn: (id: number) => api.put(`/cobranzas/${id}/anular`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cobranzas"] }),
   });
 }

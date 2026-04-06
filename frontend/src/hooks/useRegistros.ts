@@ -21,6 +21,7 @@ export interface Registro {
   RegistroImputaIrp: string;
   RegistroComprobanteAsociado: string;
   RegistroTimbradoAsociado: string;
+  RegistroEstado: string;
   AlumnoNombre?: string;
   AlumnoApellido?: string;
   AlumnoCI?: string;
