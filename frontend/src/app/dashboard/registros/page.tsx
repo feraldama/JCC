@@ -162,6 +162,7 @@ export default function RegistrosPage() {
                 { header: "Imputa Irp", value: (r) => r.RegistroImputaIrp },
                 { header: "Comprobante Asociado", value: (r) => r.RegistroComprobanteAsociado },
                 { header: "Timbrado Asociado", value: (r) => r.RegistroTimbradoAsociado },
+                { header: "Estado", value: (r) => r.RegistroEstado === "X" ? "ANULADO" : "" },
               ],
               "Registros"
             )}
