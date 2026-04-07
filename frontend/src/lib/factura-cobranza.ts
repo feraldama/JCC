@@ -23,50 +23,50 @@ export interface FacturaData {
 /* ─── Posiciones (mm) ajustables para cuadrar con la factura pre-impresa ─── */
 
 // Offset Y donde comienza cada copia en la página
-const COPIA_1_Y = 0;   // Original: Cliente
-const COPIA_2_Y = 148;  // Duplicado: Archivo Tributario
+const COPIA_1_Y = 0; // Original: Cliente
+const COPIA_2_Y = 148; // Duplicado: Archivo Tributario
 
 // Posiciones relativas al inicio de cada copia
 const POS = {
   // Fecha de emisión
   fechaX: 50,
-  fechaY: 47,
+  fechaY: 43,
 
   // Condición de venta (X en casilla CONTADO)
-  contadoX: 158,
-  contadoY: 47,
+  contadoX: 166,
+  contadoY: 43,
 
   // RUC (usamos CI del alumno)
-  rucX: 22,
-  rucY: 55,
+  rucX: 27,
+  rucY: 49,
 
   // Nombre o Razón Social
-  nombreX: 55,
-  nombreY: 63,
+  nombreX: 50,
+  nombreY: 55,
 
   // Grado/Curso
-  cursoX: 148,
-  cursoY: 63,
+  cursoX: 154,
+  cursoY: 55,
 
   // Tabla de items - primera fila
-  tablaY: 82,
+  tablaY: 75,
   tablaLineH: 6,
   cantX: 20,
-  descX: 38,
-  precioX: 110,
-  exentasX: 140,
-  iva10X_col: 175,  // columna 10% en la tabla de items
+  descX: 30,
+  precioX: 125,
+  exentasX: 149,
+  iva10X_col: 187, // columna 10% en la tabla de items
 
   // Total a pagar (en guaraníes)
-  totalY: 122,
-  totalX: 175,
-  totalLetrasX: 55,  // posición X para el monto en letras
+  totalY: 114,
+  totalX: 183,
+  totalLetrasX: 55, // posición X para el monto en letras
 
   // Liquidación IVA
-  ivaY: 132,
-  iva5X: 60,
-  iva10X: 100,
-  ivaTotalX: 145,
+  ivaY: 126,
+  iva5X: 58,
+  iva10X: 85,
+  ivaTotalX: 130,
 };
 
 function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
@@ -87,7 +87,11 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
   doc.text(data.alumnoCI, POS.rucX, y(POS.rucY));
 
   // Nombre o Razón Social
-  doc.text(`${data.alumnoNombre} ${data.alumnoApellido}`, POS.nombreX, y(POS.nombreY));
+  doc.text(
+    `${data.alumnoNombre} ${data.alumnoApellido}`,
+    POS.nombreX,
+    y(POS.nombreY),
+  );
 
   // Grado/Curso
   doc.text(data.cursoNombre, POS.cursoX, y(POS.cursoY));
@@ -98,24 +102,36 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
   // Separar febrero de los demás meses
   const meses = data.mesPagado.split(", ").filter(Boolean);
   const mesesSinFeb = meses.filter((m) => m !== "FEBRERO");
-  const importeFeb = data.incluyeFebrero ? Math.floor(data.importeCuota / 2) : 0;
+  const importeFeb = data.incluyeFebrero
+    ? Math.floor(data.importeCuota / 2)
+    : 0;
   const subtotalSinFeb = data.subtotalCuota - importeFeb;
 
   // Fila: Febrero aparte (50% cuota) → columna EXENTAS
   if (data.incluyeFebrero) {
     doc.text("1", POS.cantX, y(filaY), { align: "center" });
     doc.text("CUOTA MENSUAL - FEBRERO (50%)", POS.descX, y(filaY));
-    doc.text(formatMiles(importeFeb), POS.precioX, y(filaY), { align: "right" });
-    doc.text(formatMiles(importeFeb), POS.exentasX, y(filaY), { align: "right" });
+    doc.text(formatMiles(importeFeb), POS.precioX, y(filaY), {
+      align: "right",
+    });
+    doc.text(formatMiles(importeFeb), POS.exentasX, y(filaY), {
+      align: "right",
+    });
     filaY += POS.tablaLineH;
   }
 
   // Fila: Resto de meses agrupados → columna EXENTAS
   if (mesesSinFeb.length > 0 && subtotalSinFeb > 0) {
-    doc.text(String(mesesSinFeb.length), POS.cantX, y(filaY), { align: "center" });
+    doc.text(String(mesesSinFeb.length), POS.cantX, y(filaY), {
+      align: "center",
+    });
     doc.text(`CUOTA MENSUAL - ${mesesSinFeb.join(", ")}`, POS.descX, y(filaY));
-    doc.text(formatMiles(data.importeCuota), POS.precioX, y(filaY), { align: "right" });
-    doc.text(formatMiles(subtotalSinFeb), POS.exentasX, y(filaY), { align: "right" });
+    doc.text(formatMiles(data.importeCuota), POS.precioX, y(filaY), {
+      align: "right",
+    });
+    doc.text(formatMiles(subtotalSinFeb), POS.exentasX, y(filaY), {
+      align: "right",
+    });
     filaY += POS.tablaLineH;
   }
 
@@ -123,8 +139,12 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
   if (data.adicionalMonto > 0) {
     doc.text("1", POS.cantX, y(filaY), { align: "center" });
     doc.text(data.adicionalDetalle || "ADICIONAL", POS.descX, y(filaY));
-    doc.text(formatMiles(data.adicionalMonto), POS.precioX, y(filaY), { align: "right" });
-    doc.text(formatMiles(data.adicionalMonto), POS.iva10X_col, y(filaY), { align: "right" });
+    doc.text(formatMiles(data.adicionalMonto), POS.precioX, y(filaY), {
+      align: "right",
+    });
+    doc.text(formatMiles(data.adicionalMonto), POS.iva10X_col, y(filaY), {
+      align: "right",
+    });
     filaY += POS.tablaLineH;
   }
 
@@ -132,8 +152,12 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
   if (data.descuento > 0) {
     doc.text("1", POS.cantX, y(filaY), { align: "center" });
     doc.text("DESCUENTO", POS.descX, y(filaY));
-    doc.text(`-${formatMiles(data.descuento)}`, POS.precioX, y(filaY), { align: "right" });
-    doc.text(`-${formatMiles(data.descuento)}`, POS.exentasX, y(filaY), { align: "right" });
+    doc.text(`-${formatMiles(data.descuento)}`, POS.precioX, y(filaY), {
+      align: "right",
+    });
+    doc.text(`-${formatMiles(data.descuento)}`, POS.exentasX, y(filaY), {
+      align: "right",
+    });
   }
 
   // Total a pagar
@@ -149,7 +173,8 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
 
   // Liquidación del IVA
   // Cuotas son exentas, adicionales llevan IVA 10%
-  const iva10 = data.adicionalMonto > 0 ? Math.round(data.adicionalMonto / 11) : 0;
+  const iva10 =
+    data.adicionalMonto > 0 ? Math.round(data.adicionalMonto / 11) : 0;
   doc.setFont("helvetica", "normal");
   doc.text("0", POS.iva5X, y(POS.ivaY), { align: "right" });
   doc.text(formatMiles(iva10), POS.iva10X, y(POS.ivaY), { align: "right" });
