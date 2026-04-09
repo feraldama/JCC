@@ -47,18 +47,32 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const childArray = React.Children.toArray(children)
+  const headerIdx = childArray.findIndex(
+    (child) => React.isValidElement(child) && child.type === DialogHeader
+  )
+  const headerNode = headerIdx !== -1 ? childArray[headerIdx] : null
+  const bodyNodes = headerIdx !== -1
+    ? [...childArray.slice(0, headerIdx), ...childArray.slice(headerIdx + 1)]
+    : childArray
+
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed bottom-0 left-0 right-0 z-50 flex flex-col w-full max-h-[90vh] rounded-t-2xl bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-sm sm:rounded-xl data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom sm:data-open:slide-in-from-bottom-0 sm:data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom sm:data-closed:slide-out-to-bottom-0 sm:data-closed:zoom-out-95",
           className
         )}
         {...props}
       >
-        {children}
+        {headerNode && (
+          <div className="shrink-0 px-4 pt-4 pb-3">{headerNode}</div>
+        )}
+        <div className={cn("overflow-y-auto flex-1 px-4 pb-4 flex flex-col gap-4", !headerNode && "pt-4")}>
+          {bodyNodes}
+        </div>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
