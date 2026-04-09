@@ -33,6 +33,106 @@ router.get("/", async (req: Request, res: Response) => {
   res.json({ data: result.rows, total: countResult.rows[0].total });
 });
 
+// GET /:id/estado-cuenta - estado de cuenta de todos los alumnos del curso
+router.get("/:id/estado-cuenta", async (req: Request, res: Response) => {
+  const cursoId = Number(req.params.id);
+  const { anio } = req.query;
+  const year = Number(anio) || new Date().getFullYear();
+
+  // Datos del curso
+  const cursoResult = await pool.query(
+    'SELECT * FROM curso WHERE "CursoId" = $1',
+    [cursoId]
+  );
+  if (cursoResult.rows.length === 0) {
+    res.status(404).json({ error: "Curso no encontrado" });
+    return;
+  }
+  const curso = cursoResult.rows[0];
+  const importe = Number(curso.CursoImporte);
+
+  // Alumnos del curso
+  const alumnosResult = await pool.query(
+    `SELECT "AlumnoId", "AlumnoNombre", "AlumnoApellido", "AlumnoCI"
+     FROM alumno WHERE "CursoId" = $1
+     ORDER BY "AlumnoApellido", "AlumnoNombre"`,
+    [cursoId]
+  );
+
+  // Cobranzas de todos los alumnos del curso en el año
+  const alumnoIds = alumnosResult.rows.map((a: any) => a.AlumnoId);
+  let cobranzasMap: Record<number, { CobranzaId: number; CobranzaFecha: string; CobranzaMesPagado: string }[]> = {};
+  if (alumnoIds.length > 0) {
+    const cobranzasResult = await pool.query(
+      `SELECT "CobranzaId", "CobranzaFecha", "CobranzaMesPagado", "AlumnoId"
+       FROM cobranza
+       WHERE "AlumnoId" = ANY($1) AND EXTRACT(YEAR FROM "CobranzaFecha") = $2
+         AND "CobranzaEstado" = 'A'`,
+      [alumnoIds, year]
+    );
+    for (const c of cobranzasResult.rows) {
+      if (!cobranzasMap[c.AlumnoId]) cobranzasMap[c.AlumnoId] = [];
+      cobranzasMap[c.AlumnoId].push(c);
+    }
+  }
+
+  const nombreANum: Record<string, number> = {
+    FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
+    JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11,
+  };
+  const nombresMeses: Record<number, string> = {
+    2: "FEBRERO", 3: "MARZO", 4: "ABRIL", 5: "MAYO", 6: "JUNIO",
+    7: "JULIO", 8: "AGOSTO", 9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE",
+  };
+
+  let totalGeneralPagado = 0;
+  let totalGeneralPendiente = 0;
+
+  const alumnos = alumnosResult.rows.map((alumno: any) => {
+    const cobranzas = cobranzasMap[alumno.AlumnoId] || [];
+    const mesesPagados = new Set<number>();
+    for (const c of cobranzas) {
+      const nombres = String(c.CobranzaMesPagado).split(",").map((s: string) => s.trim().toUpperCase());
+      for (const nombre of nombres) {
+        const num = nombreANum[nombre];
+        if (num) mesesPagados.add(num);
+      }
+    }
+
+    let totalPagado = 0;
+    let totalPendiente = 0;
+    const meses: { mes: number; nombre: string; pagado: boolean; monto: number }[] = [];
+    for (let m = 2; m <= 11; m++) {
+      const monto = m === 2 ? Math.floor(importe / 2) : importe;
+      const pagado = mesesPagados.has(m);
+      if (pagado) totalPagado += monto;
+      else totalPendiente += monto;
+      meses.push({ mes: m, nombre: nombresMeses[m], pagado, monto });
+    }
+
+    totalGeneralPagado += totalPagado;
+    totalGeneralPendiente += totalPendiente;
+
+    return {
+      AlumnoId: alumno.AlumnoId,
+      AlumnoNombre: alumno.AlumnoNombre,
+      AlumnoApellido: alumno.AlumnoApellido,
+      AlumnoCI: alumno.AlumnoCI,
+      meses,
+      totalPagado,
+      totalPendiente,
+    };
+  });
+
+  res.json({
+    curso: { CursoId: curso.CursoId, CursoNombre: curso.CursoNombre, CursoImporte: importe },
+    anio: year,
+    alumnos,
+    totalGeneralPagado,
+    totalGeneralPendiente,
+  });
+});
+
 // GET /:id - obtener curso por id
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await pool.query('SELECT * FROM curso WHERE "CursoId" = $1', [req.params.id]);

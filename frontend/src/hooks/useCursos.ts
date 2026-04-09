@@ -39,3 +39,29 @@ export function useEliminarCurso() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cursos"] }),
   });
 }
+
+export interface AlumnoEstadoCuentaGrado {
+  AlumnoId: number;
+  AlumnoNombre: string;
+  AlumnoApellido: string;
+  AlumnoCI: string;
+  meses: { mes: number; nombre: string; pagado: boolean; monto: number }[];
+  totalPagado: number;
+  totalPendiente: number;
+}
+
+export interface EstadoCuentaGrado {
+  curso: { CursoId: number; CursoNombre: string; CursoImporte: number };
+  anio: number;
+  alumnos: AlumnoEstadoCuentaGrado[];
+  totalGeneralPagado: number;
+  totalGeneralPendiente: number;
+}
+
+export function useEstadoCuentaGrado(cursoId: number, anio: number) {
+  return useQuery<EstadoCuentaGrado>({
+    queryKey: ["estado-cuenta-grado", cursoId, anio],
+    queryFn: () => api.get(`/cursos/${cursoId}/estado-cuenta?anio=${anio}`),
+    enabled: cursoId > 0,
+  });
+}
