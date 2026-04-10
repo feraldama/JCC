@@ -59,7 +59,7 @@ const POS = {
 
   // Total a pagar (en guaraníes)
   totalY: 114,
-  totalX: 183,
+  totalX: 190,
   totalLetrasX: 55, // posición X para el monto en letras
 
   // Liquidación IVA
@@ -160,10 +160,20 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
     });
   }
 
+  // Subtotales de columnas (1 fila encima de total en letras)
+  const subtotalY = POS.totalY - POS.tablaLineH;
+  const totalExentas = data.subtotalCuota - data.descuento;
+  const totalIva10 = data.adicionalMonto;
+  doc.text(formatMiles(totalExentas), POS.exentasX, y(subtotalY), { align: "right" });
+  if (totalIva10 > 0) {
+    doc.text(formatMiles(totalIva10), POS.iva10X_col, y(subtotalY), { align: "right" });
+  }
+
   // Total a pagar
   const total = data.subtotalCuota + data.adicionalMonto - data.descuento;
   doc.setFont("helvetica", "bold");
-  doc.text(formatMiles(total), POS.totalX, y(POS.totalY), { align: "right" });
+  doc.setFontSize(12);
+  doc.text(formatMiles(total), POS.totalX, y(POS.totalY + 3), { align: "right" });
 
   // Total en letras
   doc.setFont("helvetica", "normal");
