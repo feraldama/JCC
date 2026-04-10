@@ -196,7 +196,8 @@ export default function CobranzasPage() {
           </button>
           <button
             onClick={() => {
-              const hoy = new Date().toISOString().slice(0, 10);
+              const now = new Date();
+              const hoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
               setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: 0, CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
               setMesesSeleccionados([]);
               setAlumnoSeleccionado(null);
