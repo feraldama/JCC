@@ -125,20 +125,32 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
     doc.text(String(mesesSinFeb.length), POS.cantX, y(filaY), {
       align: "center",
     });
-    doc.text(`CUOTA MENSUAL - ${mesesSinFeb.join(", ")}`, POS.descX, y(filaY));
+    // Ancho disponible para la descripción (hasta antes de la columna precio)
+    const descMaxWidth = POS.precioX - POS.descX - 18;
+    const descLines = doc.splitTextToSize(
+      `CUOTA - ${mesesSinFeb.join(", ")}`,
+      descMaxWidth,
+    ) as string[];
+    descLines.forEach((line, i) => {
+      doc.text(line, POS.descX, y(filaY + i * POS.tablaLineH));
+    });
     doc.text(formatMiles(data.importeCuota), POS.precioX, y(filaY), {
       align: "right",
     });
     doc.text(formatMiles(subtotalSinFeb), POS.exentasX, y(filaY), {
       align: "right",
     });
-    filaY += POS.tablaLineH;
+    filaY += POS.tablaLineH * descLines.length;
   }
 
   // Fila 2: Adicional (examen u otro) → columna 10%
   if (data.adicionalMonto > 0) {
     doc.text("1", POS.cantX, y(filaY), { align: "center" });
-    doc.text(data.adicionalDetalle || "ADICIONAL", POS.descX, y(filaY));
+    doc.text(
+      data.adicionalDetalle ? `ADICIONAL - ${data.adicionalDetalle}` : "ADICIONAL",
+      POS.descX,
+      y(filaY),
+    );
     doc.text(formatMiles(data.adicionalMonto), POS.precioX, y(filaY), {
       align: "right",
     });
@@ -164,16 +176,22 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
   const subtotalY = POS.totalY - POS.tablaLineH;
   const totalExentas = data.subtotalCuota - data.descuento;
   const totalIva10 = data.adicionalMonto;
-  doc.text(formatMiles(totalExentas), POS.exentasX, y(subtotalY), { align: "right" });
+  doc.text(formatMiles(totalExentas), POS.exentasX, y(subtotalY), {
+    align: "right",
+  });
   if (totalIva10 > 0) {
-    doc.text(formatMiles(totalIva10), POS.iva10X_col, y(subtotalY), { align: "right" });
+    doc.text(formatMiles(totalIva10), POS.iva10X_col, y(subtotalY), {
+      align: "right",
+    });
   }
 
   // Total a pagar
   const total = data.subtotalCuota + data.adicionalMonto - data.descuento;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text(formatMiles(total), POS.totalX, y(POS.totalY + 3), { align: "right" });
+  doc.text(formatMiles(total), POS.totalX, y(POS.totalY + 3), {
+    align: "right",
+  });
 
   // Total en letras
   doc.setFont("helvetica", "normal");
