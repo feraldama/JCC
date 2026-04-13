@@ -25,7 +25,7 @@ model cobranza {
   CobranzaId               Int      @id @default(autoincrement())
   CobranzaFecha            DateTime @db.Date
   AlumnoId                 Int
-  CobranzaMesPagado        String   @db.VarChar(30)
+  CobranzaMesPagado        String   @db.VarChar(100)
   CobranzaMes              Int      @db.SmallInt
   CobranzaSubtotalCuota    BigInt
   CobranzaDiasMora         Int      @db.SmallInt
