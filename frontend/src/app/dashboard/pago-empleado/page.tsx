@@ -97,13 +97,15 @@ export default function PagoEmpleadoPage() {
       mostrarError("Ingrese un monto válido");
       return;
     }
-    const saldoActual = pagosResp?.saldoTotal ?? 0;
-    if (montoPagar > saldoActual) {
-      mostrarError("El monto a pagar no puede ser mayor al saldo pendiente");
+    const salarioTotal = pagosResp?.salarioTotal ?? 0;
+    if (montoPagar > salarioTotal) {
+      mostrarError(
+        "El descuento/anticipo no puede ser mayor al salario total",
+      );
       return;
     }
 
-    const nuevoSaldo = saldoActual - montoPagar;
+    const nuevoSaldo = salarioTotal - montoPagar;
     const nroRecibo = reciboResp?.siguiente ?? 1;
 
     try {
@@ -123,7 +125,7 @@ export default function PagoEmpleadoPage() {
         empleadoApellido: empleadoSeleccionado!.EmpleadoApellido,
         empleadoCI: empleadoSeleccionado!.EmpleadoCI,
         mes,
-        salarioTotal: pagosResp?.salarioTotal ?? 0,
+        salarioTotal,
         descuentos: montoPagar,
         saldoCobrar: nuevoSaldo,
       });
@@ -302,7 +304,7 @@ export default function PagoEmpleadoPage() {
             </div>
             <div className="flex-1">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Monto a Pagar
+                Descuento/Anticipo
               </label>
               <input
                 type="text"
