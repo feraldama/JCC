@@ -241,7 +241,7 @@ function dibujarRecibo(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   const centerPage = left + boxW / 2;
-  doc.text(`Son guaraníes: ${numeroALetras(data.saldoCobrar)}`, centerPage, ly, { align: "center" });
+  doc.text(`Son guaraníes: ${numeroALetras(data.descuentos)}`, centerPage, ly, { align: "center" });
 
   // ── Firmas ──
   // Posicionar las dos firmas dentro del marco con márgenes seguros

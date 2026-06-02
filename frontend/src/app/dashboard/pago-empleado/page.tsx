@@ -124,8 +124,8 @@ export default function PagoEmpleadoPage() {
         empleadoCI: empleadoSeleccionado!.EmpleadoCI,
         mes,
         salarioTotal: pagosResp?.salarioTotal ?? 0,
-        descuentos: pagosResp?.totalEntregado ?? 0,
-        saldoCobrar: montoPagar,
+        descuentos: montoPagar,
+        saldoCobrar: nuevoSaldo,
       });
       setMontoPagar(0);
       mostrarExito("Pago registrado");
@@ -147,8 +147,8 @@ export default function PagoEmpleadoPage() {
       empleadoCI: empleadoSeleccionado.EmpleadoCI,
       mes,
       salarioTotal: salario,
-      descuentos: salario - entrega - saldo,
-      saldoCobrar: entrega,
+      descuentos: entrega,
+      saldoCobrar: saldo,
     });
   }
 
