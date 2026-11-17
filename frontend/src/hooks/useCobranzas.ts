@@ -17,6 +17,7 @@ export interface Cobranza {
   CobranzaTimbrado: number;
   CobranzaFebrero: string;
   CobranzaAdicionalDetalle: string;
+  CobranzaAdicionalCantidad: number | null; // null en cobranzas anteriores al campo
   CobranzaEstado: string;
   AlumnoNombre?: string;
   AlumnoApellido?: string;

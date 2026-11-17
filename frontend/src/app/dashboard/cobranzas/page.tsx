@@ -49,7 +49,10 @@ export default function CobranzasPage() {
     CobranzaTimbrado: 0,
     CobranzaFebrero: "N",
     CobranzaAdicionalDetalle: "",
+    CobranzaAdicionalCantidad: 1,
   });
+  // Precio unitario del adicional; CobranzaExamen = cantidad × unitario
+  const [adicionalUnitario, setAdicionalUnitario] = useState(0);
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -124,6 +127,7 @@ export default function CobranzasPage() {
       importeCuota,
       adicionalDetalle: c.CobranzaAdicionalDetalle,
       adicionalMonto: Number(c.CobranzaExamen),
+      adicionalCantidad: c.CobranzaAdicionalCantidad,
       descuento: Number(c.CobranzaDescuento),
     };
     imprimirFactura(data);
@@ -135,7 +139,7 @@ export default function CobranzasPage() {
       return;
     }
     try {
-      await crear.mutateAsync({ ...form, UsuarioId: usuario?.UsuarioId });
+      await crear.mutateAsync({ ...form, CobranzaAdicionalCantidad: form.CobranzaAdicionalCantidad || 1, UsuarioId: usuario?.UsuarioId });
       setModal(false);
       mostrarExito("Cobranza registrada");
       // Imprimir factura con los datos del formulario + alumno seleccionado
@@ -154,6 +158,7 @@ export default function CobranzasPage() {
         importeCuota: Number(alumnoSeleccionado?.CursoImporte ?? 0),
         adicionalDetalle: form.CobranzaAdicionalDetalle,
         adicionalMonto: form.CobranzaExamen,
+        adicionalCantidad: form.CobranzaAdicionalCantidad || 1,
         descuento: form.CobranzaDescuento,
       };
       imprimirFactura(data);
@@ -198,7 +203,8 @@ export default function CobranzasPage() {
             onClick={() => {
               const now = new Date();
               const hoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-              setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: 0, CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "" });
+              setForm({ CobranzaFecha: hoy, AlumnoId: 0, CobranzaMesPagado: "", CobranzaMes: 0, CobranzaSubtotalCuota: 0, CobranzaDiasMora: 0, CobranzaExamen: 0, CobranzaDescuento: 0, CobranzaNroComprobante: 0, CobranzaTimbrado: 0, CobranzaFebrero: "N", CobranzaAdicionalDetalle: "", CobranzaAdicionalCantidad: 1 });
+              setAdicionalUnitario(0);
               setMesesSeleccionados([]);
               setAlumnoSeleccionado(null);
               setModal(true);
@@ -433,25 +439,53 @@ export default function CobranzasPage() {
                 className="w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional Detalle</label>
               <input
                 value={form.CobranzaAdicionalDetalle}
+                maxLength={30}
+                placeholder="Ej: MAYO-AGOSTO-NOVIEMBRE"
                 onChange={(e) => setForm({ ...form, CobranzaAdicionalDetalle: e.target.value.toUpperCase() })}
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Adicional</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Cantidad Adicional</label>
               <input
                 type="text"
                 inputMode="numeric"
-                value={formatMiles(form.CobranzaExamen)}
-                onChange={(e) => setForm({ ...form, CobranzaExamen: parseMiles(e.target.value) })}
+                value={form.CobranzaAdicionalCantidad || ""}
+                onChange={(e) => {
+                  const cant = Math.min(99, Number(e.target.value.replace(/\D/g, "")) || 0);
+                  setForm({ ...form, CobranzaAdicionalCantidad: cant, CobranzaExamen: cant * adicionalUnitario });
+                }}
+                onBlur={() => {
+                  if (!form.CobranzaAdicionalCantidad) setForm({ ...form, CobranzaAdicionalCantidad: 1, CobranzaExamen: adicionalUnitario });
+                }}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Precio Unitario Adicional</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={formatMiles(adicionalUnitario)}
+                onChange={(e) => {
+                  const unitario = parseMiles(e.target.value);
+                  setAdicionalUnitario(unitario);
+                  setForm({ ...form, CobranzaExamen: (form.CobranzaAdicionalCantidad || 1) * unitario });
+                }}
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
             <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              {form.CobranzaExamen > 0 && (
+                <div className="mb-1 flex justify-between text-sm text-gray-600">
+                  <span>Adicional ({form.CobranzaAdicionalCantidad || 1} × {formatMiles(adicionalUnitario)})</span>
+                  <span>{formatGuaranies(form.CobranzaExamen)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-gray-700">Total</span>
                 <span className="font-bold text-gray-900">{formatGuaranies(form.CobranzaSubtotalCuota + form.CobranzaExamen)}</span>

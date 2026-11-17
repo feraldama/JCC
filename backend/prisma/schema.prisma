@@ -36,7 +36,8 @@ model cobranza {
   CobranzaTimbrado         Int
   CobranzaFebrero          String   @db.VarChar(1)
   CobranzaAdicionalDetalle String   @db.VarChar(30)
-  CobranzaEstado           String   @default("A") @db.VarChar(1)
+  CobranzaAdicionalCantidad Int?    @db.SmallInt
+  CobranzaEstado          String   @default("A") @db.VarChar(1)
   usuario                  usuario  @relation(fields: [UsuarioId], references: [UsuarioId], onDelete: NoAction, onUpdate: NoAction, map: "ICOBRANZA1")
   alumno                   alumno   @relation(fields: [AlumnoId], references: [AlumnoId], onDelete: NoAction, onUpdate: NoAction, map: "ICOBRANZA2")
 

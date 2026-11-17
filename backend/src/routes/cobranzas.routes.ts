@@ -110,8 +110,20 @@ router.post("/", async (req: Request, res: Response) => {
     CobranzaFecha, AlumnoId, CobranzaMesPagado, CobranzaMes,
     CobranzaSubtotalCuota, CobranzaDiasMora, CobranzaExamen,
     CobranzaDescuento, UsuarioId, CobranzaNroComprobante,
-    CobranzaTimbrado, CobranzaFebrero, CobranzaAdicionalDetalle
+    CobranzaTimbrado, CobranzaFebrero, CobranzaAdicionalDetalle,
+    CobranzaAdicionalCantidad
   } = req.body;
+
+  // Cantidad de adicionales: entero >= 1 (1 si no viene o no hay adicional)
+  const adicionalCantidad = Number(CobranzaExamen) > 0 ? Number(CobranzaAdicionalCantidad ?? 1) : 1;
+  if (!Number.isInteger(adicionalCantidad) || adicionalCantidad < 1 || adicionalCantidad > 99) {
+    res.status(400).json({ error: "La cantidad de adicionales debe ser un entero entre 1 y 99" });
+    return;
+  }
+  if (Number(CobranzaExamen) % adicionalCantidad !== 0) {
+    res.status(400).json({ error: "El monto del adicional no se divide exacto entre la cantidad" });
+    return;
+  }
 
   // Validar que el nro comprobante esté dentro del rango del talonario
   const talonario = await pool.query(
@@ -134,14 +146,16 @@ router.post("/", async (req: Request, res: Response) => {
       "CobranzaFecha", "AlumnoId", "CobranzaMesPagado", "CobranzaMes",
       "CobranzaSubtotalCuota", "CobranzaDiasMora", "CobranzaExamen",
       "CobranzaDescuento", "UsuarioId", "CobranzaNroComprobante",
-      "CobranzaTimbrado", "CobranzaFebrero", "CobranzaAdicionalDetalle"
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      "CobranzaTimbrado", "CobranzaFebrero", "CobranzaAdicionalDetalle",
+      "CobranzaAdicionalCantidad"
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     RETURNING *`,
     [
       CobranzaFecha, AlumnoId, CobranzaMesPagado, CobranzaMes,
       CobranzaSubtotalCuota, CobranzaDiasMora, CobranzaExamen,
       CobranzaDescuento, UsuarioId, CobranzaNroComprobante,
-      CobranzaTimbrado, CobranzaFebrero, CobranzaAdicionalDetalle
+      CobranzaTimbrado, CobranzaFebrero, CobranzaAdicionalDetalle,
+      adicionalCantidad
     ]
   );
 

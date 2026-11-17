@@ -16,8 +16,30 @@ export interface FacturaData {
   incluyeFebrero: boolean;
   importeCuota: number; // importe mensual completo del curso
   adicionalDetalle: string;
-  adicionalMonto: number;
+  adicionalMonto: number; // total del adicional (cantidad × unitario)
+  adicionalCantidad: number | null; // null = cobranza anterior al campo: se deduce del detalle
   descuento: number;
+}
+
+/**
+ * Cantidad y precio unitario del adicional para la factura.
+ * - Si la cobranza guardó la cantidad, se usa esa.
+ * - Si no (cobranzas viejas), se cuenta cuántos ítems tiene el detalle separados
+ *   por "-", "," o "/" (ej. "MAYO-AGOSTO-NOVIEMBRE" -> 3). Solo se acepta si el
+ *   monto se divide exacto; si no, se imprime 1 × total como antes.
+ */
+export function resolverAdicional(
+  monto: number,
+  cantidad: number | null,
+  detalle: string,
+): { cantidad: number; unitario: number } {
+  let cant = cantidad && cantidad > 0 ? cantidad : 0;
+  if (!cant) {
+    const items = (detalle ?? "").split(/[-,/]/).map((s) => s.trim()).filter(Boolean);
+    cant = items.length > 1 && monto % items.length === 0 ? items.length : 1;
+  }
+  if (monto % cant !== 0) cant = 1;
+  return { cantidad: cant, unitario: monto / cant };
 }
 
 /* ─── Posiciones (mm) ajustables para cuadrar con la factura pre-impresa ─── */
@@ -145,13 +167,18 @@ function dibujarFactura(doc: jsPDF, data: FacturaData, offsetY: number) {
 
   // Fila 2: Adicional (examen u otro) → columna 10%
   if (data.adicionalMonto > 0) {
-    doc.text("1", POS.cantX, y(filaY), { align: "center" });
+    const adicional = resolverAdicional(
+      data.adicionalMonto,
+      data.adicionalCantidad,
+      data.adicionalDetalle,
+    );
+    doc.text(String(adicional.cantidad), POS.cantX, y(filaY), { align: "center" });
     doc.text(
       data.adicionalDetalle ? `ADICIONAL - ${data.adicionalDetalle}` : "ADICIONAL",
       POS.descX,
       y(filaY),
     );
-    doc.text(formatMiles(data.adicionalMonto), POS.precioX, y(filaY), {
+    doc.text(formatMiles(adicional.unitario), POS.precioX, y(filaY), {
       align: "right",
     });
     doc.text(formatMiles(data.adicionalMonto), POS.iva10X_col, y(filaY), {
