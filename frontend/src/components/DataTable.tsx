@@ -34,7 +34,13 @@ interface DataTableProps<T> {
   sortBy?: string;
   sortDir?: "asc" | "desc";
   onSort?: (sortKey: string) => void;
+  // Si se indica (ej. "calc(100vh - 360px)"), en desktop las filas scrollean
+  // dentro de la tabla con el encabezado fijo y la paginación queda visible.
+  scrollMaxHeight?: string;
 }
+
+// Encabezado fijo al scrollear (fondo opaco para tapar las filas que pasan debajo)
+const stickyTh = " sticky top-0 z-10 bg-gray-50 shadow-[inset_0_-1px_0_rgb(243_244_246)]";
 
 export default function DataTable<T>({
   data,
@@ -55,6 +61,7 @@ export default function DataTable<T>({
   sortBy,
   sortDir,
   onSort,
+  scrollMaxHeight,
 }: DataTableProps<T>) {
   const [searchInput, setSearchInput] = useState("");
   const onSearchRef = useRef(onSearch);
@@ -139,14 +146,17 @@ export default function DataTable<T>({
           </div>
 
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
+          <div
+            className={`hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block ${scrollMaxHeight ? "overflow-auto" : "overflow-hidden"}`}
+            style={scrollMaxHeight ? { maxHeight: scrollMaxHeight } : undefined}
+          >
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
                   {columns.map((col) => (
                     <th
                       key={col.header}
-                      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500${col.sortKey && onSort ? " cursor-pointer select-none hover:text-gray-700" : ""}`}
+                      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500${col.sortKey && onSort ? " cursor-pointer select-none hover:text-gray-700" : ""}${scrollMaxHeight ? stickyTh : ""}`}
                       onClick={col.sortKey && onSort ? () => onSort(col.sortKey!) : undefined}
                     >
                       <span className="inline-flex items-center gap-1">
@@ -160,7 +170,7 @@ export default function DataTable<T>({
                     </th>
                   ))}
                   {actions && (
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500${scrollMaxHeight ? stickyTh : ""}`}>
                       Acciones
                     </th>
                   )}

@@ -406,6 +406,7 @@ export default function GratificacionPage() {
           </>
         )}
         actions={acciones}
+        scrollMaxHeight={pendientes.length > 0 ? "calc(100vh - 430px)" : "calc(100vh - 370px)"}
       />
     </div>
   );
