@@ -144,9 +144,34 @@ interface ReciboData {
   saldoCobrar: number;
 }
 
+interface ReciboGratificacionData {
+  nroRecibo: number;
+  fecha: string;
+  empleadoNombre: string;
+  empleadoApellido: string;
+  empleadoCI: string;
+  anio: number;
+  monto: number;
+}
+
+// Lo que cambia entre el recibo de salario y el de gratificación.
+// La tabla de montos admite 1 columna (centrada) o 3 columnas.
+interface ReciboLayout {
+  titulo: string;
+  tituloFontSize: number;
+  nroRecibo: number;
+  fecha: string;
+  empleadoNombre: string;
+  empleadoApellido: string;
+  empleadoCI: string;
+  periodo: string;
+  columnas: { label: string; valor: number }[];
+  montoEnLetras: number;
+}
+
 function dibujarRecibo(
   doc: jsPDF,
-  data: ReciboData,
+  data: ReciboLayout,
   y: number,
   tipo: "Original" | "Duplicado",
 ) {
@@ -173,8 +198,8 @@ function dibujarRecibo(
   doc.setLineWidth(0.4);
   doc.rect(143, y + 3, 54, 28);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("RECIBO DE SALARIO", reciboCenterX, y + 11, { align: "center" });
+  doc.setFontSize(data.tituloFontSize);
+  doc.text(data.titulo, reciboCenterX, y + 11, { align: "center" });
   doc.setFontSize(8);
   doc.text("R.U.C.: 80083832-7", reciboCenterX, y + 17, { align: "center" });
   doc.setFontSize(10);
@@ -212,19 +237,19 @@ function dibujarRecibo(
   campo("Cédula de Identidad Nro.:  ", formatMiles(Number(data.empleadoCI) || 0));
 
   ly += lineH;
-  campo("Período de Pago:  ", `Mes de ${MESES[data.mes]}`);
+  campo("Período de Pago:  ", data.periodo);
 
   // ── Tabla de montos ──
   ly += 11;
-  const col1 = left + 35;
-  const col2 = left + 93;
-  const col3 = left + 150;
+  const centerPage = left + boxW / 2;
+  const posiciones =
+    data.columnas.length === 3
+      ? [left + 35, left + 93, left + 150]
+      : [centerPage];
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("Total Salario", col1, ly, { align: "center" });
-  doc.text("Descuentos/Anticipos", col2, ly, { align: "center" });
-  doc.text("Saldo a Cobrar", col3, ly, { align: "center" });
+  data.columnas.forEach((c, k) => doc.text(c.label, posiciones[k], ly, { align: "center" }));
 
   doc.setLineWidth(0.2);
   doc.line(left + 5, ly + 2, right - 5, ly + 2);
@@ -232,16 +257,15 @@ function dibujarRecibo(
   ly += 9;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(formatMiles(data.salarioTotal), col1, ly, { align: "center" });
-  doc.text(formatMiles(data.descuentos), col2, ly, { align: "center" });
-  doc.text(formatMiles(data.saldoCobrar), col3, ly, { align: "center" });
+  data.columnas.forEach((c, k) =>
+    doc.text(formatMiles(c.valor), posiciones[k], ly, { align: "center" }),
+  );
 
   // Son guaranies
   ly += 10;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  const centerPage = left + boxW / 2;
-  doc.text(`Son guaraníes: ${numeroALetras(data.saldoCobrar)}`, centerPage, ly, { align: "center" });
+  doc.text(`Son guaraníes: ${numeroALetras(data.montoEnLetras)}`, centerPage, ly, { align: "center" });
 
   // ── Firmas ──
   // Posicionar las dos firmas dentro del marco con márgenes seguros
@@ -278,14 +302,62 @@ function dibujarRecibo(
   doc.setTextColor(0, 0, 0);
 }
 
-export function generarReciboSalario(data: ReciboData) {
+// Una hoja A4 por recibo: Original arriba y Duplicado abajo.
+function generarPdf(layouts: ReciboLayout[], nombreArchivo: string) {
   const doc = new jsPDF("p", "mm", "a4");
 
-  // Original (parte superior)
-  dibujarRecibo(doc, data, 10, "Original");
+  layouts.forEach((layout, k) => {
+    if (k > 0) doc.addPage();
+    dibujarRecibo(doc, layout, 10, "Original");
+    dibujarRecibo(doc, layout, 148, "Duplicado");
+  });
 
-  // Duplicado (parte inferior)
-  dibujarRecibo(doc, data, 148, "Duplicado");
+  doc.save(nombreArchivo);
+}
 
-  doc.save(`Recibo_Salario_${data.nroRecibo}.pdf`);
+export function generarReciboSalario(data: ReciboData) {
+  generarPdf(
+    [{
+      titulo: "RECIBO DE SALARIO",
+      tituloFontSize: 11,
+      nroRecibo: data.nroRecibo,
+      fecha: data.fecha,
+      empleadoNombre: data.empleadoNombre,
+      empleadoApellido: data.empleadoApellido,
+      empleadoCI: data.empleadoCI,
+      periodo: `Mes de ${MESES[data.mes]}`,
+      columnas: [
+        { label: "Total Salario", valor: data.salarioTotal },
+        { label: "Descuentos/Anticipos", valor: data.descuentos },
+        { label: "Saldo a Cobrar", valor: data.saldoCobrar },
+      ],
+      montoEnLetras: data.saldoCobrar,
+    }],
+    `Recibo_Salario_${data.nroRecibo}.pdf`,
+  );
+}
+
+function layoutGratificacion(data: ReciboGratificacionData): ReciboLayout {
+  return {
+    titulo: "RECIBO DE GRATIFICACIÓN",
+    tituloFontSize: 10,
+    nroRecibo: data.nroRecibo,
+    fecha: data.fecha,
+    empleadoNombre: data.empleadoNombre,
+    empleadoApellido: data.empleadoApellido,
+    empleadoCI: data.empleadoCI,
+    periodo: `Gratificación Año ${data.anio}`,
+    columnas: [{ label: "Monto Gratificación", valor: data.monto }],
+    montoEnLetras: data.monto,
+  };
+}
+
+export function generarReciboGratificacion(data: ReciboGratificacionData) {
+  generarPdf([layoutGratificacion(data)], `Recibo_Gratificacion_${data.nroRecibo}.pdf`);
+}
+
+// Todos los recibos en un solo PDF, una hoja por empleado.
+export function generarRecibosGratificacion(datos: ReciboGratificacionData[], anio: number) {
+  if (datos.length === 0) return;
+  generarPdf(datos.map(layoutGratificacion), `Recibos_Gratificacion_${anio}.pdf`);
 }

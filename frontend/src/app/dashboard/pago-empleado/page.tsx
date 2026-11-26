@@ -5,7 +5,6 @@ import {
   usePagosEmpleado,
   useCrearPago,
   useEliminarPago,
-  useSiguienteRecibo,
   type Pago,
 } from "@/hooks/usePagos";
 import { useEmpleados } from "@/hooks/useEmpleados";
@@ -55,7 +54,6 @@ export default function PagoEmpleadoPage() {
     mes,
     anio,
   );
-  const { data: reciboResp } = useSiguienteRecibo();
   const crear = useCrearPago();
   const eliminar = useEliminarPago();
 
@@ -106,20 +104,19 @@ export default function PagoEmpleadoPage() {
     }
 
     const nuevoSaldo = salarioTotal - montoPagar;
-    const nroRecibo = reciboResp?.siguiente ?? 1;
 
     try {
-      await crear.mutateAsync({
+      // El nro. de recibo lo asigna el backend al guardar
+      const pago = await crear.mutateAsync({
         PagoEmpleadoFecha: fecha,
         EmpleadoId: empleadoId,
         PagoEmpleadoEntregaMonto: montoPagar,
         PagoEmpleadoSaldoMonto: nuevoSaldo,
         UsuarioId: usuario?.UsuarioId,
-        PagoEmpleadoNroRecibo: nroRecibo,
       });
       // Generar PDF
       generarReciboSalario({
-        nroRecibo,
+        nroRecibo: Number(pago.PagoEmpleadoNroRecibo),
         fecha,
         empleadoNombre: empleadoSeleccionado!.EmpleadoNombre,
         empleadoApellido: empleadoSeleccionado!.EmpleadoApellido,

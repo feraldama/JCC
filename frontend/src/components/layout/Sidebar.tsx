@@ -12,6 +12,7 @@ import {
   Users,
   Wallet,
   HandCoins,
+  Gift,
   ClipboardList,
   UserCog,
   Shield,
@@ -54,6 +55,7 @@ const menuGroups: MenuGroup[] = [
       { id: "empleados", path: "/dashboard/empleados", label: "Empleados", icon: Users },
       { id: "pago-empleado", path: "/dashboard/pago-empleado", label: "Pago a Empleado", icon: HandCoins },
       { id: "pagos", path: "/dashboard/pagos", label: "Historial Pagos", icon: Wallet },
+      { id: "gratificacion", path: "/dashboard/gratificacion", label: "Gratificación", icon: Gift },
     ],
   },
   {

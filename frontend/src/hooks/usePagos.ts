@@ -47,21 +47,13 @@ export function usePagosEmpleado(empleadoId: number | undefined, mes: number, an
   });
 }
 
-export function useSiguienteRecibo() {
-  return useQuery<{ siguiente: number }>({
-    queryKey: ["siguiente-recibo"],
-    queryFn: () => api.get("/pagos/siguiente-recibo/next"),
-  });
-}
-
 export function useCrearPago() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) => api.post("/pagos", data),
+    mutationFn: (data: Record<string, unknown>) => api.post<Pago>("/pagos", data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pagos"] });
       qc.invalidateQueries({ queryKey: ["pagos-empleado"] });
-      qc.invalidateQueries({ queryKey: ["siguiente-recibo"] });
     },
   });
 }
@@ -73,7 +65,6 @@ export function useEliminarPago() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pagos"] });
       qc.invalidateQueries({ queryKey: ["pagos-empleado"] });
-      qc.invalidateQueries({ queryKey: ["siguiente-recibo"] });
     },
   });
 }

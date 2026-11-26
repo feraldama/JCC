@@ -22,6 +22,7 @@
 #### Empleados y Pagos
 - **empleado**: Empleados con CI, nombre, apellido y monto de cobro.
 - **pagoempleado**: Pagos a empleados con fecha, monto entregado, saldo, nro recibo. Registra qué usuario realizó el pago.
+- **gratificacion**: Gratificación (aguinaldo) anual por empleado: año, monto cargado a mano, fecha, nro recibo (numeración propia por secuencia, empieza en 1, nunca se reutiliza) y usuario. Un registro por empleado por año; sin pagos parciales ni saldo.
 
 #### Contabilidad / Impuestos
 - **registro**: Registros contables vinculados a alumnos. Maneja IVA 10%, IVA 5%, IVA Exento, tipo de comprobante, condición, moneda extranjera, imputaciones (IVA, IRE, IRP). Sistema tributario paraguayo.
@@ -64,8 +65,18 @@
 
 ### 8. Pago a Empleados
 - Registro de pagos con monto entregado y saldo.
-- Generación de recibo.
+- Generación de recibo. El nro. lo asigna el backend al guardar, desde la secuencia `pagoempleado_nro_recibo_seq`: nunca se reutiliza, aunque se elimine el pago. En "Historial Pagos" se puede cargar un nro. a mano (vacío = automático); la secuencia se adelanta para no repetirlo.
 - Historial de pagos por empleado.
+
+### 8.1. Gratificación
+- Lista de todos los empleados (incluidos los socios) para el año elegido.
+- Se carga el monto de cada uno a mano (botón "100%" copia el salario). Se guarda por fila (Enter) o todo junto con "Guardar todos" (todo o nada).
+- Se imprime el recibo de cada uno o "Imprimir todos" (un PDF, una hoja por empleado, Original y Duplicado).
+- Se puede corregir el monto y reimprimir; el nro. de recibo se mantiene.
+- "Exportar" descarga a Excel la planilla del año (solo lo guardado).
+- Con montos sin guardar, pide confirmación al cerrar/recargar la pestaña o al ir a otra pantalla por el menú.
+- El dashboard suma en la tarjeta de Empleados la gratificación con fecha de pago en el mes actual.
+- El nro. de recibo sale de la secuencia `gratificacion_nro_recibo_seq`: nunca se reutiliza, aunque se elimine la gratificación.
 
 ### 9. Registro Contable
 - ABM de registros tributarios.

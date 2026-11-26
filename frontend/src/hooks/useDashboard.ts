@@ -25,6 +25,7 @@ export interface DashboardStats {
     AlumnoCI: string;
   }[];
   pagosMes: { cantidad: number; monto: number };
+  gratificacionMes: { cantidad: number; monto: number };
 }
 
 export function useDashboard() {

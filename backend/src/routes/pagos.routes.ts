@@ -101,9 +101,12 @@ router.get("/empleado/:empleadoId", async (req: Request, res: Response) => {
   });
 });
 
-// GET /siguiente-recibo - obtener siguiente número de recibo
+// GET /siguiente-recibo - próximo nro. de recibo (solo informativo: no lo
+// reserva; el número definitivo lo asigna el POST al guardar).
 router.get("/siguiente-recibo/next", async (_req: Request, res: Response) => {
-  const result = await pool.query('SELECT COALESCE(MAX("PagoEmpleadoNroRecibo"), 0) + 1 AS siguiente FROM pagoempleado');
+  const result = await pool.query(
+    "SELECT last_value + CASE WHEN is_called THEN 1 ELSE 0 END AS siguiente FROM pagoempleado_nro_recibo_seq"
+  );
   res.json({ siguiente: Number(result.rows[0].siguiente) });
 });
 
@@ -125,22 +128,54 @@ router.get("/:id", async (req: Request, res: Response) => {
   res.json(result.rows[0]);
 });
 
-// POST / - crear pago
+// POST / - crear pago.
+// Sin PagoEmpleadoNroRecibo (o <= 0) toma el siguiente de la secuencia, que
+// nunca reutiliza un número aunque se elimine el pago. Con un número cargado a
+// mano (Historial Pagos) lo respeta y adelanta la secuencia si hace falta, para
+// que los números automáticos no lo repitan.
 router.post("/", async (req: Request, res: Response) => {
   const {
     PagoEmpleadoFecha, EmpleadoId, PagoEmpleadoEntregaMonto,
-    PagoEmpleadoSaldoMonto, UsuarioId, PagoEmpleadoNroRecibo
+    PagoEmpleadoSaldoMonto, UsuarioId,
   } = req.body;
+  const nroManual = Number(req.body.PagoEmpleadoNroRecibo);
+  const usarManual = Number.isSafeInteger(nroManual) && nroManual > 0;
 
-  const result = await pool.query(
-    `INSERT INTO pagoempleado (
-      "PagoEmpleadoFecha", "EmpleadoId", "PagoEmpleadoEntregaMonto",
-      "PagoEmpleadoSaldoMonto", "UsuarioId", "PagoEmpleadoNroRecibo"
-    ) VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING *`,
-    [PagoEmpleadoFecha, EmpleadoId, PagoEmpleadoEntregaMonto, PagoEmpleadoSaldoMonto, UsuarioId, PagoEmpleadoNroRecibo]
-  );
-  res.status(201).json(result.rows[0]);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    // Serializa con otros pagos para que un ajuste de la secuencia (nro. manual)
+    // no la haga retroceder por debajo de un número recién tomado.
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('pagoempleado_nro_recibo'))");
+    let nroRecibo: number;
+    if (usarManual) {
+      nroRecibo = nroManual;
+      await client.query(
+        `SELECT setval('pagoempleado_nro_recibo_seq', $1, false)
+         FROM pagoempleado_nro_recibo_seq
+         WHERE last_value + CASE WHEN is_called THEN 1 ELSE 0 END < $1`,
+        [nroManual + 1]
+      );
+    } else {
+      const seq = await client.query("SELECT nextval('pagoempleado_nro_recibo_seq') AS nro");
+      nroRecibo = Number(seq.rows[0].nro);
+    }
+    const result = await client.query(
+      `INSERT INTO pagoempleado (
+        "PagoEmpleadoFecha", "EmpleadoId", "PagoEmpleadoEntregaMonto",
+        "PagoEmpleadoSaldoMonto", "UsuarioId", "PagoEmpleadoNroRecibo"
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *`,
+      [PagoEmpleadoFecha, EmpleadoId, PagoEmpleadoEntregaMonto, PagoEmpleadoSaldoMonto, UsuarioId, nroRecibo]
+    );
+    await client.query("COMMIT");
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 });
 
 // DELETE /:id - eliminar pago

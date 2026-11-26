@@ -89,7 +89,10 @@ export default function DashboardPage() {
       title: "Empleados",
       value: stats ? String(stats.totalEmpleados) : "-",
       subtitle: stats
-        ? `Pagos del mes: ${formatGuaranies(stats.pagosMes.monto)}`
+        ? `Pagos del mes: ${formatGuaranies(stats.pagosMes.monto)}` +
+          (stats.gratificacionMes?.monto
+            ? ` · Gratificación: ${formatGuaranies(stats.gratificacionMes.monto)}`
+            : "")
         : "Cargando...",
       icon: Users,
       iconBg: "bg-violet-50",

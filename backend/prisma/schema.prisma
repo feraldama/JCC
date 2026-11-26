@@ -59,6 +59,23 @@ model empleado {
   EmpleadoApellido   String         @db.VarChar(30)
   EmpleadoCobroMonto BigInt
   pagoempleado       pagoempleado[]
+  gratificacion      gratificacion[]
+}
+
+model gratificacion {
+  GratificacionId        Int      @id @default(autoincrement())
+  GratificacionAnio      Int      @db.SmallInt
+  EmpleadoId             Int
+  GratificacionMonto     BigInt
+  GratificacionFecha     DateTime @db.Date
+  GratificacionNroRecibo BigInt   @unique(map: "UGRATIFICACION_NRORECIBO")
+  UsuarioId              String   @db.VarChar(12)
+  usuario                usuario  @relation(fields: [UsuarioId], references: [UsuarioId], onDelete: NoAction, onUpdate: NoAction, map: "IGRATIFICACION1")
+  empleado               empleado @relation(fields: [EmpleadoId], references: [EmpleadoId], onDelete: NoAction, onUpdate: NoAction, map: "IGRATIFICACION2")
+
+  @@unique([GratificacionAnio, EmpleadoId], map: "UGRATIFICACION_ANIO_EMPLEADO")
+  @@index([UsuarioId], map: "idx_IGRATIFICACION1")
+  @@index([EmpleadoId], map: "idx_IGRATIFICACION2")
 }
 
 model factura {
@@ -141,6 +158,7 @@ model usuario {
   UsuarioEstado     String          @db.VarChar(1)
   cobranza          cobranza[]
   pagoempleado      pagoempleado[]
+  gratificacion     gratificacion[]
   usuarioperfil     usuarioperfil[]
 }
 

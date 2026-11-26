@@ -280,10 +280,13 @@ export default function PagosPage() {
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Nro Recibo</label>
               <input
                 type="number"
-                value={form.PagoEmpleadoNroRecibo}
+                min={0}
+                placeholder="Automático"
+                value={form.PagoEmpleadoNroRecibo || ""}
                 onChange={(e) => setForm({ ...form, PagoEmpleadoNroRecibo: Number(e.target.value) })}
                 className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
+              <p className="mt-1 text-xs text-gray-500">Dejar vacío para asignar el siguiente número automáticamente.</p>
             </div>
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -21,6 +21,7 @@ router.get("/", async (_req: Request, res: Response) => {
     cobranzasRecientes,
     alumnosMorosos,
     pagosMes,
+    gratificacionMes,
   ] = await Promise.all([
     // Total alumnos
     pool.query('SELECT COUNT(*)::int AS total FROM alumno'),
@@ -96,6 +97,15 @@ router.get("/", async (_req: Request, res: Response) => {
        WHERE "PagoEmpleadoFecha" >= $1 AND "PagoEmpleadoFecha" <= $2`,
       [primerDiaMes, ultimoDiaMes]
     ),
+
+    // Gratificaciones (aguinaldo) con fecha de pago en el mes actual
+    pool.query(
+      `SELECT COALESCE(SUM("GratificacionMonto"), 0)::bigint AS monto,
+              COUNT(*)::int AS cantidad
+       FROM gratificacion
+       WHERE "GratificacionFecha" >= $1 AND "GratificacionFecha" <= $2`,
+      [primerDiaMes, ultimoDiaMes]
+    ),
   ]);
 
   res.json({
@@ -123,6 +133,10 @@ router.get("/", async (_req: Request, res: Response) => {
     pagosMes: {
       cantidad: pagosMes.rows[0].cantidad,
       monto: Number(pagosMes.rows[0].monto),
+    },
+    gratificacionMes: {
+      cantidad: gratificacionMes.rows[0].cantidad,
+      monto: Number(gratificacionMes.rows[0].monto),
     },
   });
 });
